@@ -1,4 +1,4 @@
-const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyQaBZGoUYSHiOgUTGP4hVJabErUkhUDRCuOYwikN82kuHr1JhF8cdF3p4IkSQpXxxWhg/exec";
 
 // IndexedDB
 const db = new Dexie("ATM_DB");
