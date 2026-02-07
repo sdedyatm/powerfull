@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Aplikasi Device Hmsi">
+  <meta name="keywords" content="sdedyatm,atm,hmsi,hino">
+  <meta name="author" content="sdedyatm">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Atm Powerfull</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#667eea">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+  <style>
+    /* Modern CSS dengan efek 3D, Shadow, dan Border Radius */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #ffffff;
+      min-height: 100vh;
+      padding-top: 140px;
+      padding-bottom: 30px;
+    }
+
+    /* Sticky Header dengan efek glassmorphism */
+    .sticky-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 20px;
+      z-index: 1000;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .sticky-header h5 {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Input Search dengan efek 3D */
+    #mencari {
+      border: 2px solid #667eea;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-size: 14px;
+      background: #ffffff;
+      box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.08),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.03);
+      transition: all 0.3s ease;
+      text-align: center;
+      max-width: 250px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    #mencari:focus {
+      outline: none;
+      transform: translateY(-2px);
+      box-shadow:
+        0 15px 35px rgba(102, 126, 234, 0.25),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.03);
+      border: 2px solid #667eea;
+    }
+
+    #mencari::placeholder {
+      color: #999;
+      font-weight: 500;
+    }
+
+    /* Status text */
+    #status {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    /* Container Hasil - Lebar dipersempit */
+    #hasil {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Card ATM dengan efek 3D modern */
+    .card {
+      background: #ffffff;
+      border: none;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.08),
+        0 1px 8px rgba(0, 0, 0, 0.04);
+      position: relative;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-8px) scale(1.01);
+      box-shadow:
+        0 20px 40px rgba(102, 126, 234, 0.2),
+        0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    /* Card Header */
+    .card-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 20px;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: rotate(45deg);
+      transition: all 0.5s ease;
+    }
+
+    .card:hover .card-header::after {
+      right: -60%;
+    }
+
+    /* Card Body */
+    .card-body {
+      padding: 25px;
+      background: #ffffff;
+    }
+
+    /* Badge dengan efek 3D */
+    .badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 13px;
+      margin: 5px;
+      display: inline-block;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.18);
+    }
+
+    .badge-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+    }
+
+    .badge-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      border: none;
+    }
+
+    .badge-info {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border: none;
+    }
+
+    .badge-warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border: none;
+      color: white;
+    }
+
+    /* List Group dengan efek modern */
+    .list-group-item {
+      border: none;
+      border-left: 4px solid transparent;
+      padding: 15px 20px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .list-group-item:hover {
+      border-left-color: #667eea;
+      background: #ffffff;
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.12);
+    }
+
+    /* Strong text styling */
+    .list-group-item strong {
+      color: #667eea;
+      font-weight: 700;
+    }
+
+    /* Map Link Button */
+    a.btn {
+      border-radius: 25px;
+      padding: 10px 25px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+    }
+
+    a.btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+      text-decoration: none;
+      color: white;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      body {
+        padding-top: 160px;
+      }
+
+      .sticky-header h5 {
+        font-size: 20px;
+      }
+
+      #mencari {
+        font-size: 14px;
+        padding: 12px 20px;
+        max-width: 100%;
+      }
+
+      #hasil {
+        max-width: 100%;
+        padding: 15px;
+      }
+
+      .card-header {
+        font-size: 16px;
+        padding: 15px;
+      }
+
+      .card-body {
+        padding: 20px;
+      }
+    }
+
+    /* Loading Animation */
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .loading {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .empty-state h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sticky-header text-center">
+    <h5 class="text-primary">Atm Powerfull</h5>
+    <input id="mencari" class="form-control text-center font-weight-bold" placeholder="ketik disini..." oninput="cepatCari(this.value)">
+    <div id="status" class="text-muted mt-1" style="font-size:11px"></div>
+  </div>
+  <div id="hasil" class="p-2"></div>
+  <script src="app.js"></script>
+</body>
+
+</html>
