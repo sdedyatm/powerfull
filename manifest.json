@@ -1,8 +1,9 @@
 {
   "name": "Atm Powerfull",
   "short_name": "ATM",
-  "start_url": "/",
-  "display": "standalone",
+  "start_url": "/powerfull/",
+  "scope": "/powerfull/",
+  "display": "standalone"
   "theme_color": "#007bff",
   "background_color": "#ffffff",
   "icons": [
