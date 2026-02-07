@@ -1,10 +1,11 @@
-const CACHE = "atm-enterprise-v1";
+const BASE = "/powerfull/";
+const CACHE = "atm-enterprise-v2";
 const ASSETS = [
-  "/",
-  "/index.html",
-  "/app.js",
-  "/worker-search.js",
-  "/manifest.json"
+  BASE,
+  BASE + "index.html",
+  BASE + "app.js",
+  BASE + "worker-search.js",
+  BASE + "manifest.json"
 ];
 
 self.addEventListener("install", e => {
@@ -14,16 +15,6 @@ self.addEventListener("install", e => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", e => clients.claim());
-
-self.addEventListener("fetch", e => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
-  );
-});
-
-self.addEventListener("sync", e => {
-  if (e.tag === "atm-bg-sync") {
-    e.waitUntil(fetch("/"));
-  }
+self.addEventListener("activate", e => {
+  e.waitUntil(self.clients.claim());
 });
