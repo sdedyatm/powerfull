@@ -3,361 +3,182 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Aplikasi Device Hmsi">
-  <meta name="keywords" content="sdedyatm,atm,hmsi,hino">
+  <meta name="description" content="Aplikasi Device Hmsi Professional">
+  <meta name="keywords" content="sdedyatm,atm,hmsi,hino,app,enterprise">
   <meta name="author" content="sdedyatm">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Atm Powerfull</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Driver Apps - Field Pro</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#667eea">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+  <meta name="theme-color" content="#4285f4">
+  <script src="https://cdn.jsdelivr.net/gh/nextapps-de/flexsearch@0.7.31/dist/flexsearch.bundle.js"></script>
   <style>
-    /* Modern CSS dengan efek 3D, Shadow, dan Border Radius */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #ffffff;
-      min-height: 100vh;
-      padding-top: 140px;
-      padding-bottom: 30px;
+      font-family: -apple-system, sans-serif;
+      margin: 0;
+      padding: 15px;
+      background: #f4f7f6;
     }
 
-    /* Sticky Header dengan efek glassmorphism */
-    .sticky-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      padding: 20px;
-      z-index: 1000;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    .search-box {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+      font-size: 16px;
     }
 
-    .sticky-header h5 {
-      font-size: 24px;
-      font-weight: 700;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 15px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 10px;
     }
 
-    /* Input Search dengan efek 3D */
-    #mencari {
-      border: 2px solid #667eea;
-      border-radius: 50px;
-      padding: 12px 20px;
-      font-size: 14px;
-      background: #ffffff;
-      box-shadow:
-        0 10px 25px rgba(0, 0, 0, 0.08),
-        inset 0 -2px 5px rgba(0, 0, 0, 0.03);
-      transition: all 0.3s ease;
-      text-align: center;
-      max-width: 250px;
-      margin: 0 auto;
-      display: block;
-    }
-
-    #mencari:focus {
-      outline: none;
-      transform: translateY(-2px);
-      box-shadow:
-        0 15px 35px rgba(102, 126, 234, 0.25),
-        inset 0 -2px 5px rgba(0, 0, 0, 0.03);
-      border: 2px solid #667eea;
-    }
-
-    #mencari::placeholder {
-      color: #999;
-      font-weight: 500;
-    }
-
-    /* Status text */
     #status {
       font-size: 12px;
       color: #666;
-      margin-top: 8px;
-      font-weight: 500;
-    }
-
-    /* Container Hasil - Lebar dipersempit */
-    #hasil {
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    /* Card ATM dengan efek 3D modern */
-    .card {
-      background: #ffffff;
-      border: none;
-      border-radius: 20px;
-      margin-bottom: 20px;
-      overflow: hidden;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.08),
-        0 1px 8px rgba(0, 0, 0, 0.04);
-      position: relative;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 5px;
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 0.3s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-8px) scale(1.01);
-      box-shadow:
-        0 20px 40px rgba(102, 126, 234, 0.2),
-        0 5px 15px rgba(0, 0, 0, 0.08);
-    }
-
-    .card:hover::before {
-      transform: scaleX(1);
-    }
-
-    /* Card Header */
-    .card-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 20px;
-      font-weight: 700;
-      font-size: 18px;
-      letter-spacing: 0.5px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card-header::after {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -50%;
-      width: 200%;
-      height: 200%;
-      background: rgba(255, 255, 255, 0.1);
-      transform: rotate(45deg);
-      transition: all 0.5s ease;
-    }
-
-    .card:hover .card-header::after {
-      right: -60%;
-    }
-
-    /* Card Body */
-    .card-body {
-      padding: 25px;
-      background: #ffffff;
-    }
-
-    /* Badge dengan efek 3D */
-    .badge {
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 13px;
-      margin: 5px;
-      display: inline-block;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .badge:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.18);
-    }
-
-    .badge-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-    }
-
-    .badge-success {
-      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-      border: none;
-    }
-
-    .badge-info {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      border: none;
-    }
-
-    .badge-warning {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      border: none;
-      color: white;
-    }
-
-    /* List Group dengan efek modern */
-    .list-group-item {
-      border: none;
-      border-left: 4px solid transparent;
-      padding: 15px 20px;
-      margin-bottom: 10px;
-      border-radius: 12px;
-      background: #f8f9fa;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-
-    .list-group-item:hover {
-      border-left-color: #667eea;
-      background: #ffffff;
-      transform: translateX(5px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.12);
-    }
-
-    /* Strong text styling */
-    .list-group-item strong {
-      color: #667eea;
-      font-weight: 700;
-    }
-
-    /* Map Link Button */
-    a.btn {
-      border-radius: 25px;
-      padding: 10px 25px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-      transition: all 0.3s ease;
-      border: none;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 10px;
-    }
-
-    a.btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
-      text-decoration: none;
-      color: white;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      body {
-        padding-top: 160px;
-      }
-
-      .sticky-header h5 {
-        font-size: 20px;
-      }
-
-      #mencari {
-        font-size: 14px;
-        padding: 12px 20px;
-        max-width: 100%;
-      }
-
-      #hasil {
-        max-width: 100%;
-        padding: 15px;
-      }
-
-      .card-header {
-        font-size: 16px;
-        padding: 15px;
-      }
-
-      .card-body {
-        padding: 20px;
-      }
-    }
-
-    /* Loading Animation */
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.5;
-      }
-    }
-
-    .loading {
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    /* Scrollbar Styling */
-    ::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-    }
-
-    /* Empty State */
-    .empty-state {
       text-align: center;
-      padding: 60px 20px;
-      color: #666;
-    }
-
-    .empty-state h3 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 15px;
-      color: #333;
-    }
-
-    .empty-state p {
-      font-size: 16px;
-      opacity: 0.8;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 
 <body>
-  <div class="sticky-header text-center">
-    <h5 class="text-primary">Atm Powerfull</h5>
-    <input id="mencari" class="form-control text-center font-weight-bold" placeholder="ketik disini..." oninput="cepatCari(this.value)">
-    <div id="status" class="text-muted mt-1" style="font-size:11px"></div>
-  </div>
-  <div id="hasil" class="p-2"></div>
-  <script src="app.js"></script>
+  <h3>Atm powerfull</h3>
+  <div id="status">Mengambil data terbaru...</div>
+  <input type="text" id="searchInput" class="search-box" placeholder="Cari driver atau data...">
+  <div id="results"></div>
+
+  <script>
+    // --- MASUKKAN URL DEPLOYMENT GAS ANDA DI SINI ---
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec";
+    // --- 1. Database Lokal (Dexie) ---
+    const db = new Dexie("DriverLocalDB");
+    db.version(1).stores({
+      files: "id, content"
+    });
+    // --- 2. Mesin Pencari (FlexSearch) ---
+    const index = new FlexSearch.Document({
+      document: {
+        id: "id",
+        index: ["search_blob"],
+        store: ["rowArray"]
+      },
+      tokenize: "forward",
+      cache: true
+    });
+    // --- 3. Sinkronisasi Data (Via Fetch API) ---
+    async function syncData() {
+      const statusEl = document.getElementById('status');
+      const inputCari = document.getElementById('mencari').value;
+      statusEl.innerText = "🔍 Mengecek pembaruan data...";
+      try {
+        // Cek Versi ke Server
+        const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate`);
+        const server = await resUpdate.json();
+        const localVersion = localStorage.getItem('db_version') || "0";
+        // Jika versi sama, load dari IndexedDB saja
+        if (server.version.toString() === localVersion.toString()) {
+          const local = await db.files.get("main_data");
+          if (local) {
+            local.content.forEach(item => index.add(item));
+            statusEl.innerText = "✅ Data sudah terbaru (Offline)";
+            return;
+          }
+        }
+        // Jika versi berbeda, ambil data baru
+        statusEl.innerText = "⏳ Mendownload data baru...";
+        const resData = await fetch(`${GAS_URL}?action=getRawData`);
+        const dataFromServer = await resData.json();
+        if (!dataFromServer || dataFromServer.length === 0) {
+          statusEl.innerText = "⚠️ Server tidak mengirim data.";
+          return;
+        }
+        // Simpan ke IndexedDB
+        await db.files.put({
+          id: "main_data",
+          content: dataFromServer
+        });
+        // Update index FlexSearch
+        dataFromServer.forEach(item => index.add(item));
+        localStorage.setItem('db_version', server.version);
+        statusEl.innerText = "🚀 Sinkronisasi Berhasil (" + dataFromServer.length + " baris)";
+        if (inputCari.length >= 2) cepatCari(inputCari);
+      } catch (error) {
+        console.error(error);
+        statusEl.innerText = "Offline: Menggunakan data terakhir.";
+        // Load data lokal jika fetch gagal (karena offline)
+        const local = await db.files.get("main_data");
+        if (local) local.content.forEach(item => index.add(item));
+      }
+    }
+    // --- 4. Fungsi Pencarian (Tetap sama) ---
+    async function cepatCari(val) {
+      const searchResultsDiv = document.getElementById('hasil');
+      if (!val || val.length < 2) {
+        searchResultsDiv.innerHTML = "";
+        return;
+      }
+      const start = performance.now();
+      const results = index.search(val, {
+        limit: 500, // Limit ditingkatkan untuk akurasi
+        enrich: true,
+        suggest: true
+      });
+      const end = performance.now();
+      if (results.length > 0 && results[0].result.length > 0) {
+        const dataArray = results[0].result.map(res => res.doc.rowArray);
+        renderTable(dataArray, (end - start).toFixed(3));
+      } else {
+        searchResultsDiv.innerHTML = "<div class='p-4 text-center text-muted'>Data tidak ditemukan</div>";
+      }
+    }
+    // --- 5. Fungsi Render Tabel (Tetap sama) ---
+    function renderTable(dataArray, time) {
+      let result = `<div class='p-2 font-weight-bold' style='font-size:0.8em;'>Ditemukan: ${dataArray.length} (${time} ms)</div>` +
+        `<table class='table table-sm table-striped' id='dtable' style='font-size:0.8em; white-space: nowrap;'>` +
+        `<thead><tr>` +
+        `<th style='background-color: #747D0C;'>NO</th>` +
+        `<th style='background-color: #27e861;'>TGL</th>` +
+        `<th style='background-color: #D2691E;'>DRIVERS</th>` +
+        `<th style='background-color: #10ebe7;'>NOPOL</th>` +
+        `<th style='background-color: #FF69B4;'>NOKA</th>` +
+        `<th style='background-color: #fa0702;'>NOSIN</th>` +
+        `<th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th>` +
+        `<th style='background-color: #10ebe7;'>TUJUAN</th>` +
+        `<th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th>` +
+        `<th style='background-color: #02b0fa;'>VENDOR</th>` +
+        `<th style='background-color: #fca4a4;'>ASAL UNIT</th>` +
+        `<th style='background-color: #FFA500;'>WARNA</th>` +
+        `<th style='background-color: #929596;'>CODE BOT</th>` +
+        `<th style='background-color: #79fa02; color: #000;'>STATUS</th>` +
+        `<th style='background-color: #a302fa;'>KETERANGAN</th>` +
+        `</tr></thead><tbody>`;
+      dataArray.forEach(row => {
+        result += "<tr class='text-center font-weight-bold' style='color: #000;'>";
+        for (let j = 0; j < 15; j++) {
+          let val = row[j] || "";
+          if (j === 8 && !isNaN(val) && val !== "") {
+            val = "Rp " + Number(val).toLocaleString('id-ID');
+          }
+          result += `<td style='border: 1px solid #000;'>${val}</td>`;
+        }
+        result += "</tr>";
+      });
+      result += "</tbody></table>";
+      document.getElementById('hasil').innerHTML = result;
+    }
+    // --- 6. Inisialisasi ---
+    window.onload = () => {
+      syncData();
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+      }
+    };
+  </script>
 </body>
 
 </html>
