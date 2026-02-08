@@ -80,21 +80,27 @@
       border-radius: 10px;
       margin-bottom: 5px;
     }
+
+    .overflow-x {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
   </style>
 </head>
 
 <body>
+
   <div class="sticky-header">
     <h5 class="mb-2 text-primary font-weight-bold">Atm Powerfull</h5>
     <div class="search-container text-center">
-      <div id="stats-area" class="stats-badge text-muted"></div>
-      <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="cepatCari(this.value)">
+      <div id="stats-area" class="stats-badge text-muted">Memuat...</div>
+      <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Driver, Nopol, atau Data..." oninput="cepatCari(this.value)">
       <div id="status" class="status-msg text-muted">Menghubungkan...</div>
     </div>
   </div>
 
-  <div class="table-container shadow-sm">
-    <div id="hasil" class="overflow-auto"></div>
+  <div class="table-container overflow-x">
+    <div id="hasil"></div>
   </div>
 
   <script>
@@ -103,12 +109,11 @@
     db.version(1).stores({
       files: "id, content"
     });
-    // Inisialisasi FlexSearch
     let index = new FlexSearch.Document({
       document: {
         id: "id",
         index: ["search_blob"],
-        store: ["rowArray"]
+        store: ["rowArray", "hash"]
       },
       tokenize: "forward",
       cache: true,
@@ -116,62 +121,54 @@
     });
     async function syncData() {
       const statusEl = document.getElementById('status');
-      statusEl.className = "status-msg text-warning";
-      statusEl.innerText = "🔍 Mengecek data terbaru...";
+      statusEl.innerText = "🔍 Mengecek revisi data...";
       try {
-        // Fetch CheckUpdate dengan Cache-Buster agresif
-        const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate&nocache=${Date.now()}`);
+        const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate&t=${Date.now()}`);
         const server = await resUpdate.json();
         const localVersion = localStorage.getItem('db_version') || "initial";
-        // JIKA VERSI SAMA: Ambil dari IndexedDB
-        if (server.version.toString() === localVersion.toString()) {
-          const local = await db.files.get("main_data");
-          if (local && local.content) {
-            local.content.forEach(item => index.add(item));
+        const local = await db.files.get("main_data");
+        let currentData = (local && local.content) ? local.content : [];
+        // Render data lokal dulu agar instan
+        currentData.forEach(item => index.add(item));
+        statusEl.innerText = "✅ Menampilkan data offline...";
+        if (server.version.toString() !== localVersion.toString()) {
+          statusEl.className = "status-msg text-danger";
+          statusEl.innerText = "⏳ Sinkronisasi baris yang berubah...";
+          let hashes = {};
+          currentData.forEach(item => {
+            if (item.hash) hashes[item.id] = item.hash;
+          });
+          const resData = await fetch(`${GAS_URL}?action=getSmartUpdate&hashes=${encodeURIComponent(JSON.stringify(hashes))}&t=${Date.now()}`);
+          const updates = await resData.json();
+          if (updates && updates.length > 0) {
+            const updatedIds = new Set(updates.map(u => u.id));
+            const finalData = [...updates, ...currentData.filter(d => !updatedIds.has(d.id))];
+            await db.files.put({
+              id: "main_data",
+              content: finalData
+            });
+            // Reset Index untuk membuang sampah data lama
+            index = new FlexSearch.Document({
+              document: {
+                id: "id",
+                index: ["search_blob"],
+                store: ["rowArray", "hash"]
+              },
+              tokenize: "forward",
+              cache: true,
+              worker: false
+            });
+            finalData.forEach(item => index.add(item));
+            localStorage.setItem('db_version', server.version);
             statusEl.className = "status-msg text-success";
-            statusEl.innerText = "✅ Data Lokal Siap";
-            return;
+            statusEl.innerText = `✅ Terupdate: ${updates.length} data berubah`;
+          } else {
+            localStorage.setItem('db_version', server.version);
+            statusEl.innerText = "✅ Data sudah sinkron";
           }
         }
-        // JIKA VERSI BEDA: Paksa Update Agresif
-        statusEl.className = "status-msg text-danger";
-        statusEl.innerText = "🚀 Perubahan terdeteksi! Mengunduh...";
-        const resData = await fetch(`${GAS_URL}?action=getRawData&nocache=${Date.now()}`);
-        const dataFromServer = await resData.json();
-        if (dataFromServer && dataFromServer.length > 0) {
-          // 1. Bersihkan IndexedDB secara total
-          await db.files.clear();
-          // 2. Simpan data baru
-          await db.files.put({
-            id: "main_data",
-            content: dataFromServer
-          });
-          // 3. RESET FlexSearch Index (Penting agar data lama tidak menumpuk)
-          index = new FlexSearch.Document({
-            document: {
-              id: "id",
-              index: ["search_blob"],
-              store: ["rowArray"]
-            },
-            tokenize: "forward",
-            cache: true,
-            worker: false
-          });
-          // 4. Masukkan data baru ke Index
-          dataFromServer.forEach(item => index.add(item));
-          // 5. Update Version
-          localStorage.setItem('db_version', server.version);
-          statusEl.className = "status-msg text-success";
-          statusEl.innerText = `✅ Update Selesai (${dataFromServer.length} baris)`;
-          // Refresh tabel jika ada teks di kolom pencarian
-          const currentVal = document.getElementById('mencari').value;
-          if (currentVal) cepatCari(currentVal);
-        }
       } catch (error) {
-        console.error(error);
-        statusEl.innerText = "⚠️ Gagal Sinkron. Menggunakan data lama.";
-        const local = await db.files.get("main_data");
-        if (local) local.content.forEach(item => index.add(item));
+        statusEl.innerText = "⚠️ Mode Offline Aktif";
       }
     }
     async function cepatCari(val) {
@@ -189,7 +186,7 @@
         suggest: true
       });
       const end = performance.now();
-      if (results.length > 0 && results[0].result.length > 0) {
+      if (results && results[0] && results[0].result.length > 0) {
         const dataArray = results[0].result.map(res => res.doc.rowArray);
         statsArea.innerText = `Ditemukan: ${dataArray.length} data (${(end - start).toFixed(2)} ms)`;
         renderTable(dataArray);
@@ -227,7 +224,16 @@
     window.onload = () => {
       syncData();
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                window.location.reload();
+              }
+            };
+          };
+        });
       }
     };
   </script>
