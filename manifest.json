@@ -1,20 +1,32 @@
 {
-  "name": "Field Pro Driver Apps",
-  "short_name": "FieldPro",
-  "start_url": ".",
+  "name": "Apps Atm",
+  "short_name": "Database",
+  "description": "aplikasi pencarian database",
+  "scope": "/",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0d12",
+  "theme_color": "#0a0d12",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192/007bff/ffffff?text=FP",
+      "src": "https://play-lh.googleusercontent.com/HHGZJyhWZmKS9BjMvGp3ySBg8KrZ0lllcXDJZTDTxWCcuh0UVS3K7yXX3tRgWGyfiCc=w192-h192-rw",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://via.placeholder.com/512/007bff/ffffff?text=FieldPro",
+      "src": "https://play-lh.googleusercontent.com/HHGZJyhWZmKS9BjMvGp3ySBg8KrZ0lllcXDJZTDTxWCcuh0UVS3K7yXX3tRgWGyfiCc=w512-h512-rw",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buka Apps Atm",
+      "short_name": "Buka",
+      "url": "./index.html"
     }
   ]
 }
