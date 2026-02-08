@@ -1,5 +1,5 @@
-const CACHE_NAME = 'field-pro-v2';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'fp-cache-v1';
+const URLS = [
   './',
   './index.html',
   './manifest.json',
@@ -8,42 +8,11 @@ const ASSETS_TO_CACHE = [
   'https://unpkg.com/dexie/dist/dexie.js'
 ];
 
-// Install: Simpan semua aset UI ke cache
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-  self.skipWaiting();
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS)));
 });
 
-// Activate: Hapus cache lama jika ada update versi
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
-});
-
-// Fetch: Ambil dari cache dulu, jika tidak ada baru ambil ke network
-self.addEventListener('fetch', (event) => {
-  // Biarkan request ke GAS (API) lewat tanpa masuk ke Cache Storage 
-  // karena kita sudah mengelolanya via IndexedDB (Dexie) di index.html
-  if (event.request.url.includes('script.google.com')) {
-    return fetch(event.request);
-  }
-
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+self.addEventListener('fetch', e => {
+  if (e.request.url.includes('script.google.com')) return;
+  e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
 });
