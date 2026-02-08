@@ -1,20 +1,27 @@
-const CACHE_NAME = "fp-v" + Date.now(); // Dinamis agar selalu baru saat dideploy
+// Ganti angka dibelakang v menjadi lebih tinggi setiap kali Anda update HTML
+const CACHE_NAME = "atm-power-v5";
+
 const OFFLINE_URLS = ["./", "./index.html", "./manifest.json"];
 
+// Force SW untuk segera aktif setelah install
 self.addEventListener("install", (e) => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(OFFLINE_URLS)));
 });
 
+// Menghapus cache lama secara otomatis
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((k) => {
-          if (k !== CACHE_NAME) return caches.delete(k);
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log("Menghapus cache lama:", key);
+            return caches.delete(key);
+          }
         })
-      )
-    )
+      );
+    })
   );
   return self.clients.claim();
 });
