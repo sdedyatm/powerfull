@@ -3,64 +3,77 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Aplikasi Device Hmsi Professional">
-  <meta name="keywords" content="sdedyatm,atm,hmsi,hino,app,enterprise">
-  <meta name="author" content="sdedyatm">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-  <title>Driver Apps - Field Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atm Powerfull - Field Pro</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4285f4">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
   <script src="https://cdn.jsdelivr.net/gh/nextapps-de/flexsearch@0.7.31/dist/flexsearch.bundle.js"></script>
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
   <style>
     body {
-      font-family: -apple-system, sans-serif;
-      margin: 0;
-      padding: 15px;
-      background: #f4f7f6;
+      background-color: #f8f9fa;
+      font-family: sans-serif;
     }
 
-    .search-box {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-sizing: border-box;
-      margin-bottom: 20px;
-      font-size: 16px;
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: #f8f9fa;
+      z-index: 100;
+      padding: 15px 0;
+      border-bottom: 2px solid #007bff;
     }
 
-    .card {
+    .search-input {
+      border-radius: 25px;
+      border: 2px solid #007bff;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .table-container {
       background: white;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      margin-bottom: 10px;
+      margin-top: 10px;
+      overflow-x: auto;
+      max-height: 80vh;
+    }
+
+    #dtable th {
+      position: sticky;
+      top: 0;
+      color: white;
+      font-size: 0.7rem;
+      text-align: center;
+      border: 1px solid #444;
     }
 
     #status {
-      font-size: 12px;
-      color: #666;
+      font-size: 11px;
       text-align: center;
-      margin-bottom: 10px;
+      margin-top: 5px;
+      color: #666;
     }
   </style>
 </head>
 
 <body>
-  <h3>Atm powerfull</h3>
-  <div id="status">Mengambil data terbaru...</div>
-  <input type="text" id="searchInput" class="search-box" placeholder="Cari driver atau data...">
-  <div id="results"></div>
+
+  <div class="sticky-header">
+    <h5 class="text-center text-primary">Atm Powerfull</h5>
+    <div class="container">
+      <input type="text" id="mencari" class="form-control search-input" placeholder="Ketik Driver / Nopol / Noka..." oninput="cepatCari(this.value)">
+      <div id="status">Menginisialisasi...</div>
+    </div>
+  </div>
+
+  <div id="hasil" class="table-container p-2"></div>
 
   <script>
-    // --- MASUKKAN URL DEPLOYMENT GAS ANDA DI SINI ---
-    const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec";
-    // --- 1. Database Lokal (Dexie) ---
-    const db = new Dexie("DriverLocalDB");
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec"; // <--- GANTI INI
+    const db = new Dexie("FieldProDB");
     db.version(1).stores({
-      files: "id, content"
+      data: "id, search_blob, rowArray"
     });
-    // --- 2. Mesin Pencari (FlexSearch) ---
     const index = new FlexSearch.Document({
       document: {
         id: "id",
@@ -70,113 +83,78 @@
       tokenize: "forward",
       cache: true
     });
-    // --- 3. Sinkronisasi Data (Via Fetch API) ---
     async function syncData() {
       const statusEl = document.getElementById('status');
-      const inputCari = document.getElementById('mencari').value;
-      statusEl.innerText = "🔍 Mengecek pembaruan data...";
       try {
-        // Cek Versi ke Server
+        statusEl.innerText = "🔄 Mengecek pembaruan...";
         const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate`);
         const server = await resUpdate.json();
-        const localVersion = localStorage.getItem('db_version') || "0";
-        // Jika versi sama, load dari IndexedDB saja
-        if (server.version.toString() === localVersion.toString()) {
-          const local = await db.files.get("main_data");
-          if (local) {
-            local.content.forEach(item => index.add(item));
-            statusEl.innerText = "✅ Data sudah terbaru (Offline)";
-            return;
-          }
+        const localVersion = localStorage.getItem('db_ver') || "0";
+        if (server.version.toString() === localVersion && (await db.data.count()) > 0) {
+          statusEl.innerText = "✅ Data Siap (Offline)";
+          const allLocal = await db.data.toArray();
+          allLocal.forEach(item => index.add(item));
+          return;
         }
-        // Jika versi berbeda, ambil data baru
         statusEl.innerText = "⏳ Mendownload data baru...";
         const resData = await fetch(`${GAS_URL}?action=getRawData`);
         const dataFromServer = await resData.json();
-        if (!dataFromServer || dataFromServer.length === 0) {
-          statusEl.innerText = "⚠️ Server tidak mengirim data.";
-          return;
-        }
-        // Simpan ke IndexedDB
-        await db.files.put({
-          id: "main_data",
-          content: dataFromServer
-        });
-        // Update index FlexSearch
+        await db.data.clear();
+        await db.data.bulkAdd(dataFromServer);
         dataFromServer.forEach(item => index.add(item));
-        localStorage.setItem('db_version', server.version);
-        statusEl.innerText = "🚀 Sinkronisasi Berhasil (" + dataFromServer.length + " baris)";
-        if (inputCari.length >= 2) cepatCari(inputCari);
-      } catch (error) {
-        console.error(error);
-        statusEl.innerText = "Offline: Menggunakan data terakhir.";
-        // Load data lokal jika fetch gagal (karena offline)
-        const local = await db.files.get("main_data");
-        if (local) local.content.forEach(item => index.add(item));
+        localStorage.setItem('db_ver', server.version);
+        statusEl.innerText = `🚀 Sinkronisasi Berhasil (${dataFromServer.length} baris)`;
+      } catch (e) {
+        statusEl.innerText = "⚠️ Mode Offline Aktif";
+        const cached = await db.data.toArray();
+        cached.forEach(item => index.add(item));
       }
     }
-    // --- 4. Fungsi Pencarian (Tetap sama) ---
-    async function cepatCari(val) {
-      const searchResultsDiv = document.getElementById('hasil');
-      if (!val || val.length < 2) {
-        searchResultsDiv.innerHTML = "";
+
+    function cepatCari(val) {
+      const query = val.trim().toLowerCase();
+      const container = document.getElementById('hasil');
+      if (query.length < 2) {
+        container.innerHTML = "";
         return;
       }
       const start = performance.now();
-      const results = index.search(val, {
-        limit: 500, // Limit ditingkatkan untuk akurasi
-        enrich: true,
-        suggest: true
+      const results = index.search(query, {
+        limit: 100,
+        enrich: true
       });
       const end = performance.now();
       if (results.length > 0 && results[0].result.length > 0) {
-        const dataArray = results[0].result.map(res => res.doc.rowArray);
-        renderTable(dataArray, (end - start).toFixed(3));
+        renderTable(results[0].result.map(r => r.doc.rowArray), (end - start).toFixed(2));
       } else {
-        searchResultsDiv.innerHTML = "<div class='p-4 text-center text-muted'>Data tidak ditemukan</div>";
+        container.innerHTML = "<div class='text-center p-4 text-muted'>Data tidak ditemukan</div>";
       }
     }
-    // --- 5. Fungsi Render Tabel (Tetap sama) ---
-    function renderTable(dataArray, time) {
-      let result = `<div class='p-2 font-weight-bold' style='font-size:0.8em;'>Ditemukan: ${dataArray.length} (${time} ms)</div>` +
-        `<table class='table table-sm table-striped' id='dtable' style='font-size:0.8em; white-space: nowrap;'>` +
-        `<thead><tr>` +
-        `<th style='background-color: #747D0C;'>NO</th>` +
-        `<th style='background-color: #27e861;'>TGL</th>` +
-        `<th style='background-color: #D2691E;'>DRIVERS</th>` +
-        `<th style='background-color: #10ebe7;'>NOPOL</th>` +
-        `<th style='background-color: #FF69B4;'>NOKA</th>` +
-        `<th style='background-color: #fa0702;'>NOSIN</th>` +
-        `<th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th>` +
-        `<th style='background-color: #10ebe7;'>TUJUAN</th>` +
-        `<th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th>` +
-        `<th style='background-color: #02b0fa;'>VENDOR</th>` +
-        `<th style='background-color: #fca4a4;'>ASAL UNIT</th>` +
-        `<th style='background-color: #FFA500;'>WARNA</th>` +
-        `<th style='background-color: #929596;'>CODE BOT</th>` +
-        `<th style='background-color: #79fa02; color: #000;'>STATUS</th>` +
-        `<th style='background-color: #a302fa;'>KETERANGAN</th>` +
-        `</tr></thead><tbody>`;
-      dataArray.forEach(row => {
-        result += "<tr class='text-center font-weight-bold' style='color: #000;'>";
-        for (let j = 0; j < 15; j++) {
-          let val = row[j] || "";
-          if (j === 8 && !isNaN(val) && val !== "") {
-            val = "Rp " + Number(val).toLocaleString('id-ID');
-          }
-          result += `<td style='border: 1px solid #000;'>${val}</td>`;
-        }
-        result += "</tr>";
+
+    function renderTable(data, time) {
+      let html = `<div class='small mb-2'>Ditemukan: ${data.length} (${time} ms)</div>
+    <table class='table table-sm table-striped border' id='dtable' style='font-size:0.75rem; white-space:nowrap;'>
+      <thead class='bg-dark'>
+        <tr>
+          <th>NO</th><th>TGL</th><th>DRIVERS</th><th>NOPOL</th><th>NOKA</th><th>NOSIN</th>
+          <th>TYPE</th><th>TUJUAN</th><th>UANG JALAN</th><th>VENDOR</th><th>ASAL</th>
+          <th>WARNA</th><th>BOT</th><th>STATUS</th><th>KET</th>
+        </tr>
+      </thead><tbody>`;
+      data.forEach(row => {
+        html += "<tr class='font-weight-bold text-dark'>";
+        row.forEach((cell, i) => {
+          let val = cell || "";
+          if (i === 8 && val !== "") val = "Rp " + Number(val).toLocaleString('id-ID');
+          html += `<td class='border'>${val}</td>`;
+        });
+        html += "</tr>";
       });
-      result += "</tbody></table>";
-      document.getElementById('hasil').innerHTML = result;
+      container = document.getElementById('hasil').innerHTML = html + "</tbody></table>";
     }
-    // --- 6. Inisialisasi ---
     window.onload = () => {
       syncData();
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-      }
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
     };
   </script>
 </body>
