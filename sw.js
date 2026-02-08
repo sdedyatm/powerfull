@@ -1,27 +1,27 @@
-// Ganti angka dibelakang v menjadi lebih tinggi setiap kali Anda update HTML
-const CACHE_NAME = "atm-power-v7";
+const CACHE_NAME = "atm-pwa-v-" + Date.now();
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css",
+  "https://cdn.jsdelivr.net/gh/nextapps-de/flexsearch@0.7.31/dist/flexsearch.bundle.js",
+  "https://unpkg.com/dexie/dist/dexie.js"
+];
 
-const OFFLINE_URLS = ["./", "./index.html", "./manifest.json"];
-
-// Force SW untuk segera aktif setelah install
 self.addEventListener("install", (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(OFFLINE_URLS)));
+  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
 });
 
-// Menghapus cache lama secara otomatis
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log("Menghapus cache lama:", key);
-            return caches.delete(key);
-          }
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.map((k) => {
+          if (k !== CACHE_NAME) return caches.delete(k);
         })
-      );
-    })
+      )
+    )
   );
   return self.clients.claim();
 });
