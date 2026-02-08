@@ -26,13 +26,16 @@
       border-bottom: 2px solid #007bff;
     }
 
-    .search-input {
-      border: 2px solid #007bff;
-      border-radius: 25px;
-      height: 50px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 1.1rem;
+    /* Penyesuaian Lebar Input Pencarian */
+    .search-input { 
+      border: 2px solid #007bff; 
+      border-radius: 25px; 
+      height: 43px; 
+      text-align: center; 
+      font-weight: bold; 
+      font-size: 0.99rem;
+      width: 30%; /* Dibuat lebih pendek (70% dari lebar layar) */
+      margin: 0 auto; /* Tengah-tengah */
     }
 
     .table-container {
@@ -44,9 +47,23 @@
       border: 1px solid #dee2e6;
     }
 
+    /* Tombol Update di Pojok Kanan Atas */
+    .btn-update {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      padding: 5px 15px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Styling Tabel Sesuai Permintaan */
     #dtable th {
       color: #fff;
-      font-size: 0.7rem;
+      font-size: 0.8em;
       border: 1px solid #000;
       text-align: center;
       position: sticky;
@@ -60,33 +77,7 @@
       margin-top: 5px;
       text-align: center;
       font-weight: bold;
-      height: 15px;
-    }
-
-    /* STYLE TOMBOL REFRESH AGAR SELALU DI ATAS */
-    .btn-refresh {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .btn-refresh:active {
-      transform: scale(0.9);
-      background-color: #0056b3;
+      min-height: 15px;
     }
   </style>
 </head>
@@ -95,25 +86,23 @@
 
   <div class="sticky-header text-center">
     <h5 class="text-primary font-weight-bold mt-2">Atm Powerfull</h5>
-    <div id="stats-area" class="badge badge-light p-2 mb-2 text-muted">Inisialisasi...</div>
+
+    <button class="btn btn-primary btn-update" onclick="forceFullSync()">Update</button>
+
+    <div id="stats-area" class="badge badge-primary p-2 mb-2">Menyiapkan...</div>
     <div class="px-3">
       <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="cepatCari(this.value)">
     </div>
-    <div id="status" class="status-msg text-muted">Menghubungkan...</div>
+    <div id="status" class="status-msg text-muted">Inisialisasi...</div>
   </div>
 
   <div class="table-container shadow-sm">
     <div id="hasil">
-      <div class="p-5 text-center text-muted">Masukkan pencarian atau tunggu sinkronisasi...</div>
+      <div class="p-5 text-center text-muted">Gunakan kolom pencarian untuk menampilkan data.</div>
     </div>
   </div>
 
-  <button class="btn-refresh" onclick="forceFullSync()">
-    <span>🔄</span>
-  </button>
-
   <script>
-    // --- KONFIGURASI ---
     const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec";
     const db = new Dexie("DriverLocalDB");
     db.version(1).stores({
@@ -129,20 +118,23 @@
       cache: true,
       worker: false
     });
-    // --- LOGIKA SINKRONISASI ---
     async function syncData() {
       const statusEl = document.getElementById('status');
+      const statsArea = document.getElementById('stats-area');
       try {
+        const local = await db.files.get("main_data");
+        let currentData = (local && local.content) ? local.content : [];
+        if (currentData.length > 0) {
+          currentData.forEach(item => index.add(item));
+          statsArea.innerText = `Database: ${currentData.length} Baris`;
+          statusEl.innerText = "✅ dapat berfungsi tanpa internet";
+        }
         const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate&t=${Date.now()}`);
         const server = await resUpdate.json();
         const localVersion = localStorage.getItem('db_version');
-        const local = await db.files.get("main_data");
-        let currentData = (local && local.content) ? local.content : [];
-        // Load data yang ada dulu agar user tidak menunggu
-        currentData.forEach(item => index.add(item));
-        document.getElementById('stats-area').innerText = `${currentData.length} data tersimpan`;
-        if (server.version.toString() !== String(localVersion)) {
-          statusEl.innerText = "⏳ Mendownload perubahan...";
+        if (String(server.version) !== String(localVersion)) {
+          statusEl.className = "status-msg text-danger";
+          statusEl.innerText = "⏳ cek perubahan data...";
           let hashes = {};
           currentData.forEach(item => {
             if (item.hash) hashes[item.id] = item.hash;
@@ -156,7 +148,6 @@
               id: "main_data",
               content: finalData
             });
-            // Re-Index ulang total agar sinkron
             index = new FlexSearch.Document({
               document: {
                 id: "id",
@@ -169,55 +160,66 @@
             });
             finalData.forEach(item => index.add(item));
             localStorage.setItem('db_version', server.version);
-            statusEl.innerText = `✅ Berhasil Update: ${updates.length} data baru/berubah`;
-            document.getElementById('stats-area').innerText = `${finalData.length} data total`;
-          } else {
-            localStorage.setItem('db_version', server.version);
-            statusEl.innerText = "✅ Data sinkron";
+            statsArea.innerText = `Database: ${finalData.length} Baris`;
+            statusEl.className = "status-msg text-success";
+            statusEl.innerText = `✅ Update Berhasil: +${updates.length} terdeteksi`;
+            const currentSearch = document.getElementById('mencari').value;
+            if (currentSearch) cepatCari(currentSearch);
           }
         } else {
-          statusEl.innerText = "✅ Data sudah versi terbaru";
+          statusEl.className = "status-msg text-success";
+          statusEl.innerText = "✅ Versi terbaru";
         }
       } catch (e) {
-        statusEl.innerText = "⚠️ Offline: Menggunakan data lokal";
-        console.error(e);
+        statusEl.innerText = "⚠️ Mode tanpa internet";
       }
     }
-    // --- FUNGSI PAKSA UPDATE (HAPUS CACHE LOKAL) ---
     async function forceFullSync() {
-      if (confirm("Hapus cache lokal dan download ulang seluruh data dari Spreadsheet?")) {
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = "🧹 Membersihkan data lokal...";
+      if (confirm("Dapatkan Data Terupdate...")) {
         localStorage.removeItem('db_version');
         await db.files.clear();
         location.reload();
       }
     }
-    // --- PENCARIAN ---
     async function cepatCari(val) {
-      const searchResultsDiv = document.getElementById('hasil');
+      const hasilDiv = document.getElementById('hasil');
       if (!val || val.length < 2) {
-        searchResultsDiv.innerHTML = '<div class="p-5 text-center text-muted">Ketik minimal 2 huruf untuk mencari...</div>';
+        hasilDiv.innerHTML = '<div class="p-5 text-center text-muted">silahkan klik tombol update lalu tunggu...</div>';
         return;
       }
       const results = index.search(val, {
-        limit: 1000,
+        limit: 10000,
         enrich: true
       });
       if (results && results[0] && results[0].result.length > 0) {
-        renderTable(results[0].result.map(res => res.doc.rowArray));
+        renderTable(results[0].result.map(r => r.doc.rowArray));
       } else {
-        searchResultsDiv.innerHTML = '<div class="p-5 text-center text-muted">Data tidak ditemukan</div>';
+        hasilDiv.innerHTML = '<div class="p-5 text-center text-muted">Data tidak ditemukan.</div>';
       }
     }
-    // --- RENDER TABEL ---
+
     function renderTable(dataArray) {
-      let html = `<table class="table table-sm table-striped" id="dtable" style="font-size:0.75rem; white-space:nowrap;">
-        <thead><tr class="bg-primary text-white">
-          <th>NO</th><th>TGL</th><th>DRIVERS</th><th>NOPOL</th><th>NOKA</th><th>NOSIN</th><th>TYPE</th><th>TUJUAN</th><th>UANG JALAN</th><th>VENDOR</th><th>ASAL</th><th>WARNA</th><th>CODE BOT</th><th>STATUS</th><th>KET</th>
-        </tr></thead><tbody>`;
+      // HEADER BERWARNA SESUAI PERMINTAAN
+      let html = "<table class='table table-sm table-striped' id='dtable' style='font-size:0.8em; white-space: nowrap;'>" +
+        "<thead><tr>" +
+        "<th style='background-color: #747D0C;'>NO</th>" +
+        "<th style='background-color: #27e861;'>TGL</th>" +
+        "<th style='background-color: #D2691E;'>DRIVERS</th>" +
+        "<th style='background-color: #10ebe7;'>NOPOL</th>" +
+        "<th style='background-color: #FF69B4;'>NOKA</th>" +
+        "<th style='background-color: #fa0702;'>NOSIN</th>" +
+        "<th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th>" +
+        "<th style='background-color: #10ebe7;'>TUJUAN</th>" +
+        "<th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th>" +
+        "<th style='background-color: #02b0fa;'>VENDOR</th>" +
+        "<th style='background-color: #fca4a4;'>ASAL UNIT</th>" +
+        "<th style='background-color: #FFA500;'>WARNA</th>" +
+        "<th style='background-color: #929596;'>CODE BOT</th>" +
+        "<th style='background-color: #79fa02; color: #000;'>STATUS</th>" +
+        "<th style='background-color: #a302fa;'>KETERANGAN</th>" +
+        "</tr></thead><tbody>";
       dataArray.forEach(row => {
-        html += `<tr class="font-weight-bold text-center">`;
+        html += `<tr class="font-weight-bold text-center" style="color:#000">`;
         for (let i = 0; i < 15; i++) {
           let val = row[i] || "";
           if (i === 8 && !isNaN(val) && val !== "") val = "Rp " + Number(val).toLocaleString('id-ID');
@@ -229,19 +231,8 @@
     }
     window.onload = () => {
       syncData();
-      // Cek update Service Worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-          reg.onupdatefound = () => {
-            const worker = reg.installing;
-            worker.onstatechange = () => {
-              if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                alert("Aplikasi diperbarui ke versi terbaru!");
-                location.reload();
-              }
-            };
-          };
-        });
+        navigator.serviceWorker.register('sw.js');
       }
     };
   </script>
