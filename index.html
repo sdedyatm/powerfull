@@ -12,10 +12,9 @@
   <script src="https://cdn.jsdelivr.net/gh/nextapps-de/flexsearch@0.7.31/dist/flexsearch.bundle.js"></script>
   <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
   <link rel="manifest" href="manifest.json">
-
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       padding: 10px;
       background-color: #f8f9fa;
     }
@@ -44,7 +43,6 @@
       padding: 12px 20px;
       font-weight: bold;
       text-align: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       height: 50px;
     }
 
@@ -59,8 +57,6 @@
 
     #dtable th {
       color: #fff;
-      vertical-align: middle;
-      text-transform: uppercase;
       font-size: 0.7rem;
       border: 1px solid #000;
       text-align: center;
@@ -70,23 +66,11 @@
       padding: 8px;
     }
 
-    #dtable td {
-      border: 1px solid #dee2e6;
-      vertical-align: middle;
-      padding: 5px;
-    }
-
     .status-msg {
       font-size: 11px;
       margin-top: 5px;
-      min-height: 20px;
       text-align: center;
       font-weight: bold;
-    }
-
-    .overflow-x {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
     }
 
     .stats-badge {
@@ -102,28 +86,25 @@
 <body>
   <div class="sticky-header">
     <h5 class="mb-2 text-primary font-weight-bold">Atm Powerfull</h5>
-
     <div class="search-container text-center">
       <div id="stats-area" class="stats-badge text-muted"></div>
-      <input type="text" id="mencari" class="form-control search-input" placeholder="Ketik di sini..." oninput="cepatCari(this.value)">
+      <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="cepatCari(this.value)">
       <div id="status" class="status-msg text-muted">Menghubungkan...</div>
     </div>
   </div>
 
-  <div class="table-container overflow-x">
-    <div id="hasil"></div>
+  <div class="table-container shadow-sm">
+    <div id="hasil" class="overflow-auto"></div>
   </div>
 
   <script>
-    // --- 1. KONFIGURASI URL GAS ---
     const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec";
-    // --- 2. Database Lokal (Dexie) ---
     const db = new Dexie("DriverLocalDB");
     db.version(1).stores({
       files: "id, content"
     });
-    // --- 3. Mesin Pencari (FlexSearch) ---
-    const index = new FlexSearch.Document({
+    // Inisialisasi FlexSearch
+    let index = new FlexSearch.Document({
       document: {
         id: "id",
         index: ["search_blob"],
@@ -133,55 +114,66 @@
       cache: true,
       worker: false
     });
-    // --- 4. Sinkronisasi Data ---
     async function syncData() {
       const statusEl = document.getElementById('status');
-      statusEl.innerText = "🔍 Mengecek pembaruan data...";
+      statusEl.className = "status-msg text-warning";
+      statusEl.innerText = "🔍 Mengecek data terbaru...";
       try {
-        // Cache Buster ditambahkan (?t=...) agar browser selalu mengambil info terbaru dari server
-        const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate&t=${new Date().getTime()}`);
+        // Fetch CheckUpdate dengan Cache-Buster agresif
+        const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate&nocache=${Date.now()}`);
         const server = await resUpdate.json();
-        const localVersion = localStorage.getItem('db_version') || "0";
-        // Bandingkan Fingerprint (Bukan hanya angka, tapi string unik dari GAS)
+        const localVersion = localStorage.getItem('db_version') || "initial";
+        // JIKA VERSI SAMA: Ambil dari IndexedDB
         if (server.version.toString() === localVersion.toString()) {
           const local = await db.files.get("main_data");
           if (local && local.content) {
             local.content.forEach(item => index.add(item));
-            statusEl.innerText = "✅ Data Sinkron (Offline Ready)";
+            statusEl.className = "status-msg text-success";
+            statusEl.innerText = "✅ Data Lokal Siap";
             return;
           }
         }
-        // Jika versi berbeda, download data baru
-        statusEl.innerText = "⏳ Mendownload data baru...";
-        const resData = await fetch(`${GAS_URL}?action=getRawData&t=${new Date().getTime()}`);
+        // JIKA VERSI BEDA: Paksa Update Agresif
+        statusEl.className = "status-msg text-danger";
+        statusEl.innerText = "🚀 Perubahan terdeteksi! Mengunduh...";
+        const resData = await fetch(`${GAS_URL}?action=getRawData&nocache=${Date.now()}`);
         const dataFromServer = await resData.json();
-        if (!dataFromServer || dataFromServer.length === 0) {
-          statusEl.innerText = "⚠️ Server tidak mengirim data.";
-          return;
+        if (dataFromServer && dataFromServer.length > 0) {
+          // 1. Bersihkan IndexedDB secara total
+          await db.files.clear();
+          // 2. Simpan data baru
+          await db.files.put({
+            id: "main_data",
+            content: dataFromServer
+          });
+          // 3. RESET FlexSearch Index (Penting agar data lama tidak menumpuk)
+          index = new FlexSearch.Document({
+            document: {
+              id: "id",
+              index: ["search_blob"],
+              store: ["rowArray"]
+            },
+            tokenize: "forward",
+            cache: true,
+            worker: false
+          });
+          // 4. Masukkan data baru ke Index
+          dataFromServer.forEach(item => index.add(item));
+          // 5. Update Version
+          localStorage.setItem('db_version', server.version);
+          statusEl.className = "status-msg text-success";
+          statusEl.innerText = `✅ Update Selesai (${dataFromServer.length} baris)`;
+          // Refresh tabel jika ada teks di kolom pencarian
+          const currentVal = document.getElementById('mencari').value;
+          if (currentVal) cepatCari(currentVal);
         }
-        // Bersihkan data lama di IndexedDB dan simpan yang baru
-        await db.files.put({
-          id: "main_data",
-          content: dataFromServer
-        });
-        // Masukkan ke FlexSearch
-        dataFromServer.forEach(item => index.add(item));
-        // Simpan Fingerprint baru ke localStorage
-        localStorage.setItem('db_version', server.version);
-        statusEl.innerText = `🚀 Update Berhasil (${dataFromServer.length} baris)`;
-        // Jika user sedang mengetik, perbarui hasil pencarian
-        const currentVal = document.getElementById('mencari').value;
-        if (currentVal) cepatCari(currentVal);
       } catch (error) {
-        console.error("Sync Error:", error);
-        statusEl.innerText = "⚠️ Offline: Memuat data lokal...";
+        console.error(error);
+        statusEl.innerText = "⚠️ Gagal Sinkron. Menggunakan data lama.";
         const local = await db.files.get("main_data");
-        if (local && local.content) {
-          local.content.forEach(item => index.add(item));
-        }
+        if (local) local.content.forEach(item => index.add(item));
       }
     }
-    // --- 5. Fungsi Pencarian ---
     async function cepatCari(val) {
       const searchResultsDiv = document.getElementById('hasil');
       const statsArea = document.getElementById('stats-area');
@@ -197,34 +189,26 @@
         suggest: true
       });
       const end = performance.now();
-      const timeTaken = (end - start).toFixed(2);
       if (results.length > 0 && results[0].result.length > 0) {
         const dataArray = results[0].result.map(res => res.doc.rowArray);
-        statsArea.innerText = `Ditemukan: ${dataArray.length} data (${timeTaken} ms)`;
+        statsArea.innerText = `Ditemukan: ${dataArray.length} data (${(end - start).toFixed(2)} ms)`;
         renderTable(dataArray);
       } else {
         statsArea.innerText = "0 data ditemukan";
         searchResultsDiv.innerHTML = "<div class='p-4 text-center text-muted'>Data tidak ditemukan</div>";
       }
     }
-    // --- 6. Fungsi Render Tabel ---
+
     function renderTable(dataArray) {
       let result = "<table class='table table-sm table-striped' id='dtable' style='font-size:0.75rem; white-space: nowrap;'>" +
         "<thead><tr>" +
-        "<th style='background-color: #747D0C;'>NO</th>" +
-        "<th style='background-color: #27e861;'>TGL</th>" +
-        "<th style='background-color: #D2691E;'>DRIVERS</th>" +
-        "<th style='background-color: #10ebe7;'>NOPOL</th>" +
-        "<th style='background-color: #FF69B4;'>NOKA</th>" +
-        "<th style='background-color: #fa0702;'>NOSIN</th>" +
-        "<th style='background-color: #eefa02; color: #000;'>TYPE</th>" +
-        "<th style='background-color: #10ebe7;'>TUJUAN</th>" +
-        "<th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th>" +
-        "<th style='background-color: #02b0fa;'>VENDOR</th>" +
-        "<th style='background-color: #fca4a4;'>ASAL</th>" +
-        "<th style='background-color: #FFA500;'>WARNA</th>" +
-        "<th style='background-color: #929596;'>CODE BOT</th>" +
-        "<th style='background-color: #79fa02; color: #000;'>STATUS</th>" +
+        "<th style='background-color: #747D0C;'>NO</th><th style='background-color: #27e861;'>TGL</th>" +
+        "<th style='background-color: #D2691E;'>DRIVERS</th><th style='background-color: #10ebe7;'>NOPOL</th>" +
+        "<th style='background-color: #FF69B4;'>NOKA</th><th style='background-color: #fa0702;'>NOSIN</th>" +
+        "<th style='background-color: #eefa02; color: #000;'>TYPE</th><th style='background-color: #10ebe7;'>TUJUAN</th>" +
+        "<th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th><th style='background-color: #02b0fa;'>VENDOR</th>" +
+        "<th style='background-color: #fca4a4;'>ASAL</th><th style='background-color: #FFA500;'>WARNA</th>" +
+        "<th style='background-color: #929596;'>CODE BOT</th><th style='background-color: #79fa02; color: #000;'>STATUS</th>" +
         "<th style='background-color: #a302fa;'>KET</th>" +
         "</tr></thead><tbody>";
       let rows = "";
@@ -233,22 +217,17 @@
         rows += "<tr class='text-center font-weight-bold' style='color: #000;'>";
         for (let j = 0; j < 15; j++) {
           let val = row[j] || "";
-          if (j === 8 && val !== "" && !isNaN(val)) {
-            val = "Rp " + Number(val).toLocaleString('id-ID');
-          }
-          rows += "<td style='border: 1px solid #000;'>" + val + "</td>";
+          if (j === 8 && val !== "" && !isNaN(val)) val = "Rp " + Number(val).toLocaleString('id-ID');
+          rows += `<td style='border: 1px solid #000;'>${val}</td>`;
         }
         rows += "</tr>";
       }
       document.getElementById('hasil').innerHTML = result + rows + "</tbody></table>";
     }
-    // --- 7. Inisialisasi ---
     window.onload = () => {
       syncData();
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(() => {
-          console.log("Service Worker Registered");
-        });
+        navigator.serviceWorker.register('sw.js');
       }
     };
   </script>
