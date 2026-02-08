@@ -120,7 +120,7 @@
       }
       const start = performance.now();
       const results = index.search(query, {
-        limit: 100,
+        limit: 10000,
         enrich: true
       });
       const end = performance.now();
