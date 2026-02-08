@@ -3,7 +3,10 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Aplikasi Device Hmsi Professional">
+  <meta name="keywords" content="sdedyatm,atm,hmsi,hino,app,enterprise">
+  <meta name="author" content="sdedyatm">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
   <title>Atm Powerfull - Field Pro</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
@@ -12,7 +15,7 @@
   <style>
     body {
       background-color: #f8f9fa;
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
     }
 
     .sticky-header {
@@ -22,6 +25,7 @@
       z-index: 100;
       padding: 15px 0;
       border-bottom: 2px solid #007bff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     .search-input {
@@ -29,22 +33,31 @@
       border: 2px solid #007bff;
       text-align: center;
       font-weight: bold;
+      height: 50px;
     }
 
     .table-container {
       background: white;
       margin-top: 10px;
       overflow-x: auto;
-      max-height: 80vh;
+      max-height: 75vh;
+      border-radius: 8px;
+    }
+
+    #dtable {
+      font-size: 0.75rem;
+      white-space: nowrap;
+      width: 100%;
     }
 
     #dtable th {
       position: sticky;
       top: 0;
       color: white;
-      font-size: 0.7rem;
       text-align: center;
-      border: 1px solid #444;
+      border: 1px solid #000;
+      z-index: 10;
+      padding: 10px;
     }
 
     #status {
@@ -52,6 +65,17 @@
       text-align: center;
       margin-top: 5px;
       color: #666;
+      font-weight: bold;
+    }
+
+    .stats-info {
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      color: #333;
+      background: #e9ecef;
+      border-radius: 5px;
+      display: inline-block;
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -59,17 +83,20 @@
 <body>
 
   <div class="sticky-header">
-    <h5 class="text-center text-primary">Atm Powerfull</h5>
+    <h5 class="text-center text-primary font-weight-bold">Atm Powerfull</h5>
     <div class="container">
-      <input type="text" id="mencari" class="form-control search-input" placeholder="Ketik Driver / Nopol / Noka..." oninput="cepatCari(this.value)">
-      <div id="status">Menginisialisasi...</div>
+      <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Driver, Nopol, atau Data lainnya..." oninput="cepatCari(this.value)">
+      <div id="status">Menginisialisasi sistem...</div>
     </div>
   </div>
 
-  <div id="hasil" class="table-container p-2"></div>
+  <div class="container-fluid">
+    <div id="stats-container" class="mt-2"></div>
+    <div id="hasil" class="table-container shadow-sm"></div>
+  </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec"; // <--- GANTI INI
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec"; // GANTI DENGAN URL /exec ANDA
     const db = new Dexie("FieldProDB");
     db.version(1).stores({
       data: "id, search_blob, rowArray"
@@ -80,81 +107,114 @@
         index: ["search_blob"],
         store: ["rowArray"]
       },
-      tokenize: "forward",
+      tokenize: "forward", // Pencarian parsial (depan)
+      resolution: 9,
       cache: true
     });
     async function syncData() {
       const statusEl = document.getElementById('status');
       try {
-        statusEl.innerText = "🔄 Mengecek pembaruan...";
+        statusEl.innerText = "🔄 Mengecek pembaruan ke server...";
         const resUpdate = await fetch(`${GAS_URL}?action=checkUpdate`);
         const server = await resUpdate.json();
         const localVersion = localStorage.getItem('db_ver') || "0";
         if (server.version.toString() === localVersion && (await db.data.count()) > 0) {
-          statusEl.innerText = "✅ Data Siap (Offline)";
+          statusEl.innerText = "✅ Data sudah terbaru (Offline Ready)";
           const allLocal = await db.data.toArray();
           allLocal.forEach(item => index.add(item));
           return;
         }
-        statusEl.innerText = "⏳ Mendownload data baru...";
+        statusEl.innerText = "⏳ Mendownload data besar...";
         const resData = await fetch(`${GAS_URL}?action=getRawData`);
         const dataFromServer = await resData.json();
+        statusEl.innerText = "💾 Menyimpan ke database lokal...";
         await db.data.clear();
         await db.data.bulkAdd(dataFromServer);
         dataFromServer.forEach(item => index.add(item));
         localStorage.setItem('db_ver', server.version);
-        statusEl.innerText = `🚀 Sinkronisasi Berhasil (${dataFromServer.length} baris)`;
+        statusEl.innerText = `🚀 Berhasil: ${dataFromServer.length} baris siap cari!`;
       } catch (e) {
-        statusEl.innerText = "⚠️ Mode Offline Aktif";
+        statusEl.innerText = "⚠️ Mode Offline: Menggunakan data lokal.";
         const cached = await db.data.toArray();
-        cached.forEach(item => index.add(item));
+        if (cached.length > 0) {
+          cached.forEach(item => index.add(item));
+        } else {
+          statusEl.innerText = "❌ Gagal: Data lokal kosong. Perlu internet.";
+        }
       }
     }
 
     function cepatCari(val) {
       const query = val.trim().toLowerCase();
       const container = document.getElementById('hasil');
+      const stats = document.getElementById('stats-container');
       if (query.length < 2) {
         container.innerHTML = "";
+        stats.innerHTML = "";
         return;
       }
       const start = performance.now();
+      // LIMIT DISESUAIKAN KE 10000
       const results = index.search(query, {
         limit: 10000,
-        enrich: true
+        enrich: true,
+        suggest: true
       });
       const end = performance.now();
       if (results.length > 0 && results[0].result.length > 0) {
-        renderTable(results[0].result.map(r => r.doc.rowArray), (end - start).toFixed(2));
+        const foundData = results[0].result.map(r => r.doc.rowArray);
+        const timeTaken = (end - start).toFixed(2);
+        stats.innerHTML = `<div class='stats-info'>Ditemukan: <strong>${foundData.length}</strong> data (${timeTaken} ms)</div>`;
+        renderTable(foundData);
       } else {
-        container.innerHTML = "<div class='text-center p-4 text-muted'>Data tidak ditemukan</div>";
+        stats.innerHTML = "";
+        container.innerHTML = "<div class='text-center p-5 text-muted'>Data tidak ditemukan dalam 10.000 record</div>";
       }
     }
 
-    function renderTable(data, time) {
-      let html = `<div class='small mb-2'>Ditemukan: ${data.length} (${time} ms)</div>
-    <table class='table table-sm table-striped border' id='dtable' style='font-size:0.75rem; white-space:nowrap;'>
-      <thead class='bg-dark'>
+    function renderTable(data) {
+      const container = document.getElementById('hasil');
+      let tableHtml = `<table class='table table-sm table-striped border' id='dtable'>
+      <thead class='bg-dark text-white'>
         <tr>
-          <th>NO</th><th>TGL</th><th>DRIVERS</th><th>NOPOL</th><th>NOKA</th><th>NOSIN</th>
-          <th>TYPE</th><th>TUJUAN</th><th>UANG JALAN</th><th>VENDOR</th><th>ASAL</th>
-          <th>WARNA</th><th>BOT</th><th>STATUS</th><th>KET</th>
+          <th style='background-color: #747D0C;'>NO</th>
+          <th style='background-color: #27e861;'>TGL</th>
+          <th style='background-color: #D2691E;'>DRIVERS</th>
+          <th style='background-color: #10ebe7;'>NOPOL</th>
+          <th style='background-color: #FF69B4;'>NOKA</th>
+          <th style='background-color: #fa0702;'>NOSIN</th>
+          <th style='background-color: #eefa02; color: #000;'>TYPE</th>
+          <th style='background-color: #10ebe7;'>TUJUAN</th>
+          <th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th>
+          <th style='background-color: #02b0fa;'>VENDOR</th>
+          <th style='background-color: #fca4a4;'>ASAL</th>
+          <th style='background-color: #FFA500;'>WARNA</th>
+          <th style='background-color: #929596;'>BOT</th>
+          <th style='background-color: #79fa02; color: #000;'>STATUS</th>
+          <th style='background-color: #a302fa;'>KET</th>
         </tr>
-      </thead><tbody>`;
-      data.forEach(row => {
-        html += "<tr class='font-weight-bold text-dark'>";
-        row.forEach((cell, i) => {
-          let val = cell || "";
-          if (i === 8 && val !== "") val = "Rp " + Number(val).toLocaleString('id-ID');
-          html += `<td class='border'>${val}</td>`;
-        });
-        html += "</tr>";
-      });
-      container = document.getElementById('hasil').innerHTML = html + "</tbody></table>";
+      </thead><tbody id='table-body'>`;
+      // Optimasi: Memproses data besar dengan string buffer
+      let rowsHtml = "";
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        rowsHtml += "<tr class='font-weight-bold text-dark text-center'>";
+        for (let j = 0; j < 15; j++) {
+          let val = row[j] || "";
+          if (j === 8 && val !== "") {
+            val = "Rp " + Number(val).toLocaleString('id-ID');
+          }
+          rowsHtml += `<td class='border' style='border-color:#000 !important;'>${val}</td>`;
+        }
+        rowsHtml += "</tr>";
+      }
+      container.innerHTML = tableHtml + rowsHtml + "</tbody></table>";
     }
     window.onload = () => {
       syncData();
-      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+      }
     };
   </script>
 </body>
