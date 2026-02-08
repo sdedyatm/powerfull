@@ -1,5 +1,5 @@
 // Ganti angka dibelakang v menjadi lebih tinggi setiap kali Anda update HTML
-const CACHE_NAME = "atm-power-v5";
+const CACHE_NAME = "atm-power-v6";
 
 const OFFLINE_URLS = ["./", "./index.html", "./manifest.json"];
 
