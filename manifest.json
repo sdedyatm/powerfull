@@ -1,32 +1,21 @@
 {
-  "name": "Apps Atm",
   "short_name": "Database",
-  "description": "aplikasi pencarian database",
-  "scope": "/",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#0a0d12",
-  "theme_color": "#0a0d12",
+  "name": "Atm Powerfull - Field Pro",
   "icons": [
     {
       "src": "https://play-lh.googleusercontent.com/HHGZJyhWZmKS9BjMvGp3ySBg8KrZ0lllcXDJZTDTxWCcuh0UVS3K7yXX3tRgWGyfiCc=w192-h192-rw",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "https://play-lh.googleusercontent.com/HHGZJyhWZmKS9BjMvGp3ySBg8KrZ0lllcXDJZTDTxWCcuh0UVS3K7yXX3tRgWGyfiCc=w512-h512-rw",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "Buka Apps Atm",
-      "short_name": "Buka",
-      "url": "./index.html"
-    }
-  ]
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#007bff",
+  "background_color": "#ffffff",
+  "orientation": "portrait"
 }
