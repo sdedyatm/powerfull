@@ -4,10 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
   <title>Atm Powerfull</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
@@ -19,50 +16,50 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       padding: 10px;
-      background-color: #f8f9fa;
+      background-color: #f4f7f6;
       margin: 0;
     }
 
+    /* Sticky Header */
     .sticky-header {
       position: sticky;
       top: 0;
-      background: #f8f9fa;
+      background: #f4f7f6;
       z-index: 1000;
       padding-bottom: 10px;
       border-bottom: 2px solid #007bff;
     }
 
-    /* Tombol Update Kecil di Kanan Atas */
     .btn-update {
       position: absolute;
       top: 10px;
       right: 10px;
-      padding: 3px 10px;
+      padding: 3px 12px;
       font-size: 10px;
       font-weight: bold;
-      text-transform: uppercase;
       border-radius: 4px;
-      z-index: 1001;
     }
 
-    /* Input Pencarian Pendek */
     .search-input {
       border: 2px solid #007bff;
       border-radius: 25px;
       height: 40px;
       text-align: center;
       font-weight: bold;
-      width: 65%;
+      width: 70%;
       margin: 0 auto;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
+    /* Table Style */
     .table-container {
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       margin-top: 10px;
       height: calc(100vh - 170px);
       overflow: auto;
-      border: 1px solid #dee2e6;
+      border: 1px solid #ddd;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
     #dtable th {
@@ -72,26 +69,107 @@
       text-align: center;
       position: sticky;
       top: 0;
-      padding: 8px;
+      padding: 10px;
       z-index: 20;
     }
 
-    .status-msg {
-      font-size: 11px;
-      margin-top: 5px;
-      text-align: center;
-      font-weight: bold;
-      min-height: 15px;
+    /* CUSTOM POPUP 3D STYLE */
+    #customOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    /* Tombol Instal Melayang di Bawah (Hanya muncul jika belum instal) */
+    #customPopup {
+      background: white;
+      width: 85%;
+      max-width: 350px;
+      padding: 25px;
+      border-radius: 20px;
+      text-align: center;
+      transform: scale(0.8) translateY(20px);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      /* Efek 3D Shadow & Border */
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    #customOverlay.active {
+      opacity: 1;
+    }
+
+    #customOverlay.active #customPopup {
+      transform: scale(1) translateY(0);
+    }
+
+    .pop-icon {
+      font-size: 40px;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    .pop-title {
+      font-weight: 800;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+
+    .pop-text {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .pop-btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .pop-btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: none;
+      font-weight: bold;
+      font-size: 0.9rem;
+      transition: transform 0.1s;
+      cursor: pointer;
+    }
+
+    .pop-btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn-confirm {
+      background: #007bff;
+      color: white;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-cancel {
+      background: #eee;
+      color: #555;
+    }
+
     #installArea {
       position: fixed;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       display: none;
-      z-index: 9999;
+      z-index: 9000;
       width: 80%;
     }
   </style>
@@ -99,35 +177,40 @@
 
 <body>
 
+  <div id="customOverlay">
+    <div id="customPopup">
+      <span id="popIcon" class="pop-icon">🔄</span>
+      <div id="popTitle" class="pop-title">Konfirmasi</div>
+      <div id="popText" class="pop-text">setelah anda klik tombol ya, lanjut mohon menunggu sebentar.</div>
+      <div class="pop-btn-group">
+        <button id="popCancel" class="pop-btn btn-cancel">Batal</button>
+        <button id="popConfirm" class="pop-btn btn-confirm">Ya, Lanjut</button>
+      </div>
+    </div>
+  </div>
+
   <div class="sticky-header text-center">
     <h6 class="text-primary font-weight-bold mt-1">Atm Powerfull</h6>
-
-    <button class="btn btn-primary btn-update" onclick="forceUpdate()">Update</button>
-
-    <div id="stats-area" class="badge badge-primary p-2 mb-1">Inisialisasi...</div>
-
+    <button class="btn btn-primary btn-update" onclick="askUpdate()">Update</button>
+    <div id="stats-area" class="badge badge-primary p-2 mb-1">...</div>
     <div class="d-flex justify-content-center">
-      <input type="text" id="mencari" class="form-control search-input" placeholder="ketik disini Cari Data..." oninput="cepatCari(this.value)">
+      <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="cepatCari(this.value)">
     </div>
-
-    <div id="status" class="status-msg text-muted">menyiapkan server...</div>
+    <div id="status" class="status-msg text-muted" style="font-size: 10px; margin-top:5px;">Inisialisasi...</div>
   </div>
 
   <div class="table-container shadow-sm">
-    <div id="hasil">
-      <div class="p-5 text-center text-muted">klik tombol update untuk mendapatkan data terbaru...</div>
-    </div>
+    <div id="hasil"></div>
   </div>
 
   <div id="installArea">
     <button class="btn btn-dark btn-block shadow-lg" onclick="installPWA()" style="border-radius: 20px; font-weight: bold;">
-      Install Apps ini
+     Instal Aplikasi
     </button>
   </div>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec";
-    // Konfigurasi Database
     const db = new Dexie("DriverLocalDB");
     db.version(1).stores({
       files: "id, content"
@@ -142,7 +225,35 @@
       cache: true,
       worker: false
     });
-    // 1. Fungsi Sinkronisasi Data
+    // --- FUNGSI POPUP PROFESIONAL ---
+    function showPopup({
+      icon,
+      title,
+      text,
+      onConfirm,
+      showCancel = true
+    }) {
+      const overlay = document.getElementById('customOverlay');
+      document.getElementById('popIcon').innerText = icon;
+      document.getElementById('popTitle').innerText = title;
+      document.getElementById('popText').innerText = text;
+      const btnCancel = document.getElementById('popCancel');
+      btnCancel.style.display = showCancel ? 'block' : 'none';
+      overlay.style.display = 'flex';
+      setTimeout(() => overlay.classList.add('active'), 10);
+      document.getElementById('popConfirm').onclick = () => {
+        closePopup();
+        if (onConfirm) onConfirm();
+      };
+      btnCancel.onclick = closePopup;
+    }
+
+    function closePopup() {
+      const overlay = document.getElementById('customOverlay');
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.style.display = 'none', 300);
+    }
+    // --- LOGIKA DATA ---
     async function syncData() {
       const statusEl = document.getElementById('status');
       try {
@@ -156,7 +267,7 @@
         const server = await res.json();
         const localVer = localStorage.getItem('db_ver');
         if (String(server.version) !== String(localVer)) {
-          statusEl.innerText = "⏳ Memperbarui data...";
+          statusEl.innerText = "⏳ Sinkronisasi data...";
           let hashes = {};
           currentData.forEach(i => {
             if (i.hash) hashes[i.id] = i.hash;
@@ -171,28 +282,39 @@
               content: finalData
             });
             localStorage.setItem('db_ver', server.version);
-            location.reload();
+            showPopup({
+              icon: "✅",
+              title: "Update Selesai",
+              text: `${updates.length} data baru telah disinkronkan. Halaman akan dimuat ulang.`,
+              showCancel: false,
+              onConfirm: () => location.reload()
+            });
           }
         } else {
-          statusEl.innerText = "✅ Data Terbaru";
+          statusEl.innerText = "✅ Data Cloud Sinkron";
         }
       } catch (e) {
-        statusEl.innerText = "⚠️ Offline";
+        statusEl.innerText = "⚠️ Mode Offline";
       }
     }
-    // 2. Fungsi Paksa Update (Hapus Cache SW & DB)
-    async function forceUpdate() {
-      if (confirm("Tingkatkan Versi Aplikasi ini")) {
-        localStorage.clear();
-        await db.files.clear();
-        if ('serviceWorker' in navigator) {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          for (let r of regs) r.unregister();
+
+    function askUpdate() {
+      showPopup({
+        icon: "🚀",
+        title: "perbahurui Data",
+        text: "Seluruh Data akan dibersihkan dan data akan disusun ulang.. mohon tunggu sampai selesai",
+        onConfirm: async () => {
+          localStorage.clear();
+          await db.files.clear();
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (let r of regs) r.unregister();
+          }
+          location.reload(true);
         }
-        location.reload(true);
-      }
+      });
     }
-    // 3. Pencarian & Render
+    // --- PENCARIAN & TABEL ---
     function cepatCari(v) {
       const h = document.getElementById('hasil');
       if (v.length < 2) {
@@ -207,15 +329,17 @@
     }
 
     function renderTable(arr) {
-      let html = `<table class='table table-sm table-striped' id='dtable' style='font-size:0.8em; white-space: nowrap;'><thead><tr>
-        <th style='background-color: #747D0C;'>NO</th><th style='background-color: #27e861;'>TGL</th>
-        <th style='background-color: #D2691E;'>DRIVERS</th><th style='background-color: #10ebe7;'>NOPOL</th>
-        <th style='background-color: #FF69B4;'>NOKA</th><th style='background-color: #fa0702;'>NOSIN</th>
-        <th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th><th style='background-color: #10ebe7;'>TUJUAN</th>
-        <th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th><th style='background-color: #02b0fa;'>VENDOR</th>
-        <th style='background-color: #fca4a4;'>ASAL UNIT</th><th style='background-color: #FFA500;'>WARNA</th>
-        <th style='background-color: #929596;'>CODE BOT</th><th style='background-color: #79fa02; color: #000;'>STATUS</th>
-        <th style='background-color: #a302fa;'>KETERANGAN</th></tr></thead><tbody>`;
+      let html = `<table class='table table-sm table-striped' id='dtable' style='font-size:0.8em; white-space: nowrap;'>
+        <thead><tr>
+          <th style='background-color: #747D0C;'>NO</th><th style='background-color: #27e861;'>TGL</th>
+          <th style='background-color: #D2691E;'>DRIVERS</th><th style='background-color: #10ebe7;'>NOPOL</th>
+          <th style='background-color: #FF69B4;'>NOKA</th><th style='background-color: #fa0702;'>NOSIN</th>
+          <th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th><th style='background-color: #10ebe7;'>TUJUAN</th>
+          <th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th><th style='background-color: #02b0fa;'>VENDOR</th>
+          <th style='background-color: #fca4a4;'>ASAL UNIT</th><th style='background-color: #FFA500;'>WARNA</th>
+          <th style='background-color: #929596;'>CODE BOT</th><th style='background-color: #79fa02; color: #000;'>STATUS</th>
+          <th style='background-color: #a302fa;'>KETERANGAN</th>
+        </tr></thead><tbody>`;
       arr.forEach(r => {
         html += `<tr class="font-weight-bold text-center">`;
         r.forEach((c, i) => {
@@ -227,7 +351,7 @@
       });
       document.getElementById('hasil').innerHTML = html + "</tbody></table>";
     }
-    // 4. Logika Tombol Instal
+    // --- INSTALASI ---
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
