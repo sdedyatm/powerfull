@@ -3,19 +3,22 @@
   "name": "Atm Powerfull - Field Pro",
   "icons": [
     {
-      "src": "https://play-lh.googleusercontent.com/HHGZJyhWZmKS9BjMvGp3ySBg8KrZ0lllcXDJZTDTxWCcuh0UVS3K7yXX3tRgWGyfiCc=w192-h192-rw",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://play-lh.googleusercontent.com/HHGZJyhWZmKS9BjMvGp3ySBg8KrZ0lllcXDJZTDTxWCcuh0UVS3K7yXX3tRgWGyfiCc=w512-h512-rw",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#007bff",
   "background_color": "#ffffff",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "scope": "./"
 }
