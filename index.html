@@ -20,6 +20,7 @@
       margin: 0;
     }
 
+    /* Sticky Header */
     .sticky-header {
       position: sticky;
       top: 0;
@@ -50,6 +51,16 @@
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
+    /* Area Statistik Pencarian */
+    #search-stats {
+      font-size: 11px;
+      color: #555;
+      font-weight: bold;
+      margin-top: 5px;
+      height: 15px;
+    }
+
+    /* Table Style */
     .table-container {
       background: white;
       border-radius: 12px;
@@ -69,15 +80,6 @@
       top: 0;
       padding: 10px;
       z-index: 20;
-    }
-
-    /* Info Pencarian di Tengah Atas */
-    #search-stats {
-      font-size: 11px;
-      color: #555;
-      font-weight: bold;
-      margin-top: 5px;
-      height: 15px;
     }
 
     /* CUSTOM POPUP 3D STYLE */
@@ -187,7 +189,7 @@
     <div id="customPopup">
       <span id="popIcon" class="pop-icon">🔄</span>
       <div id="popTitle" class="pop-title">Konfirmasi</div>
-      <div id="popText" class="pop-text">Setelah anda klik tombol ya, lanjut mohon menunggu sebentar.</div>
+      <div id="popText" class="pop-text">setelah anda klik tombol ya, lanjut mohon menunggu sebentar.</div>
       <div class="pop-btn-group">
         <button id="popCancel" class="pop-btn btn-cancel">Batal</button>
         <button id="popConfirm" class="pop-btn btn-confirm">Ya, Lanjut</button>
@@ -202,9 +204,7 @@
     <div class="d-flex justify-content-center">
       <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="cepatCari(this.value)">
     </div>
-
     <div id="search-stats"></div>
-
     <div id="status" class="status-msg text-muted" style="font-size: 10px; margin-top:5px;">Inisialisasi...</div>
   </div>
 
@@ -234,7 +234,7 @@
       cache: true,
       worker: false
     });
-
+    // --- FUNGSI POPUP PROFESIONAL ---
     function showPopup({
       icon,
       title,
@@ -262,6 +262,7 @@
       overlay.classList.remove('active');
       setTimeout(() => overlay.style.display = 'none', 300);
     }
+    // --- LOGIKA DATA ---
     async function syncData() {
       const statusEl = document.getElementById('status');
       try {
@@ -322,7 +323,15 @@
         }
       });
     }
-    // --- PENCARIAN & TABEL (VERSI ASLI RINGAN + STATS) ---
+    // --- PEMBANTU SORTING TANGGAL ---
+    function parseDate(d) {
+      if (!d) return new Date(0);
+      const parts = d.split('/');
+      if (parts.length !== 3) return new Date(0);
+      // Format d/m/y ke Date object (Bulan dikurangi 1 karena index 0-11)
+      return new Date(parts[2], parts[1] - 1, parts[0]);
+    }
+    // --- PENCARIAN & TABEL ---
     function cepatCari(v) {
       const h = document.getElementById('hasil');
       const s = document.getElementById('search-stats');
@@ -331,17 +340,20 @@
         s.innerHTML = "";
         return;
       }
-      const t0 = performance.now(); // Start timer
+      const t0 = performance.now();
       const res = index.search(v, {
         limit: 500,
         enrich: true
       });
-      const t1 = performance.now(); // End timer
+      const t1 = performance.now();
       if (res && res[0]) {
         const jml = res[0].result.length;
         const waktu = (t1 - t0).toFixed(2);
         s.innerHTML = `DITEMUKAN: ${jml} DATA | WAKTU: ${waktu} MS`;
-        renderTable(res[0].result.map(r => r.doc.rowArray));
+        let rawData = res[0].result.map(r => r.doc.rowArray);
+        // Sorting: Data terbaru di paling atas (Kolom B / Indeks 1)
+        rawData.sort((a, b) => parseDate(b[1]) - parseDate(a[1]));
+        renderTable(rawData);
       } else {
         s.innerHTML = "DATA TIDAK DITEMUKAN";
         h.innerHTML = "";
@@ -350,16 +362,16 @@
 
     function renderTable(arr) {
       let html = `<table class='table table-sm table-striped' id='dtable' style='font-size:0.8em; white-space: nowrap;'>
-        <thead><tr>
-          <th style='background-color: #747D0C;'>NO</th><th style='background-color: #27e861;'>TGL</th>
-          <th style='background-color: #D2691E;'>DRIVERS</th><th style='background-color: #10ebe7;'>NOPOL</th>
-          <th style='background-color: #FF69B4;'>NOKA</th><th style='background-color: #fa0702;'>NOSIN</th>
-          <th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th><th style='background-color: #10ebe7;'>TUJUAN</th>
-          <th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th><th style='background-color: #02b0fa;'>VENDOR</th>
-          <th style='background-color: #fca4a4;'>ASAL UNIT</th><th style='background-color: #FFA500;'>WARNA</th>
-          <th style='background-color: #929596;'>CODE BOT</th><th style='background-color: #79fa02; color: #000;'>STATUS</th>
-          <th style='background-color: #a302fa;'>KETERANGAN</th>
-        </tr></thead><tbody>`;
+        <thead><tr>
+          <th style='background-color: #747D0C;'>NO</th><th style='background-color: #27e861;'>TGL</th>
+          <th style='background-color: #D2691E;'>DRIVERS</th><th style='background-color: #10ebe7;'>NOPOL</th>
+          <th style='background-color: #FF69B4;'>NOKA</th><th style='background-color: #fa0702;'>NOSIN</th>
+          <th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th><th style='background-color: #10ebe7;'>TUJUAN</th>
+          <th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th><th style='background-color: #02b0fa;'>VENDOR</th>
+          <th style='background-color: #fca4a4;'>ASAL UNIT</th><th style='background-color: #FFA500;'>WARNA</th>
+          <th style='background-color: #929596;'>CODE BOT</th><th style='background-color: #79fa02; color: #000;'>STATUS</th>
+          <th style='background-color: #a302fa;'>KETERANGAN</th>
+        </tr></thead><tbody>`;
       arr.forEach(r => {
         html += `<tr class="font-weight-bold text-center">`;
         r.forEach((c, i) => {
@@ -371,6 +383,7 @@
       });
       document.getElementById('hasil').innerHTML = html + "</tbody></table>";
     }
+    // --- INSTALASI ---
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
