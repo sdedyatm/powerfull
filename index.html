@@ -5,9 +5,10 @@
   <meta charset="UTF-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Atm Powerfull Pro</title>
+  <title>Atm Powerfull</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/nextapps-de/flexsearch@0.7.31/dist/flexsearch.bundle.js"></script>
   <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
   <link rel="manifest" href="manifest.json">
 
@@ -45,11 +46,12 @@
       height: 40px;
       text-align: center;
       font-weight: bold;
-      width: 75%;
+      width: 70%;
       margin: 0 auto;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
+    /* Area Statistik Pencarian */
     #search-stats {
       font-size: 11px;
       color: #555;
@@ -106,7 +108,8 @@
       text-align: center;
       transform: scale(0.8) translateY(20px);
       transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(0, 0, 0, 0.1);
     }
 
     #customOverlay.active {
@@ -127,6 +130,14 @@
       font-weight: 800;
       color: #333;
       margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+
+    .pop-text {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      line-height: 1.4;
     }
 
     .pop-btn-group {
@@ -140,55 +151,24 @@
       border-radius: 12px;
       border: none;
       font-weight: bold;
+      font-size: 0.9rem;
+      transition: transform 0.1s;
       cursor: pointer;
+    }
+
+    .pop-btn:active {
+      transform: scale(0.95);
     }
 
     .btn-confirm {
       background: #007bff;
       color: white;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
     }
 
     .btn-cancel {
       background: #eee;
       color: #555;
-    }
-
-    /* FLOATING MENU */
-    .fab-wrapper {
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      display: flex;
-      flex-direction: column-reverse;
-      gap: 10px;
-      z-index: 9000;
-    }
-
-    .fab-main {
-      width: 55px;
-      height: 55px;
-      border-radius: 50%;
-      background: #007bff;
-      color: white;
-      border: none;
-      font-size: 24px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    .fab-sub {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      background: white;
-      border: 1px solid #ddd;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    }
-
-    .fab-wrapper.active .fab-sub {
-      display: flex;
     }
 
     #installArea {
@@ -197,7 +177,7 @@
       left: 50%;
       transform: translateX(-50%);
       display: none;
-      z-index: 8000;
+      z-index: 9000;
       width: 80%;
     }
   </style>
@@ -209,7 +189,7 @@
     <div id="customPopup">
       <span id="popIcon" class="pop-icon">🔄</span>
       <div id="popTitle" class="pop-title">Konfirmasi</div>
-      <div id="popText" class="pop-text">Mohon tunggu sebentar...</div>
+      <div id="popText" class="pop-text">setelah anda klik tombol ya, lanjut mohon menunggu sebentar.</div>
       <div class="pop-btn-group">
         <button id="popCancel" class="pop-btn btn-cancel">Batal</button>
         <button id="popConfirm" class="pop-btn btn-confirm">Ya, Lanjut</button>
@@ -220,42 +200,41 @@
   <div class="sticky-header text-center">
     <h6 class="text-primary font-weight-bold mt-1">Atm Powerfull</h6>
     <button class="btn btn-primary btn-update" onclick="askUpdate()">Update</button>
-    <div id="stats-area" class="badge badge-primary p-2 mb-1">Data: 0</div>
+    <div id="stats-area" class="badge badge-primary p-2 mb-1">...</div>
     <div class="d-flex justify-content-center">
-      <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="triggerSearch(this.value)">
+      <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="cepatCari(this.value)">
     </div>
     <div id="search-stats"></div>
     <div id="status" class="status-msg text-muted" style="font-size: 10px; margin-top:5px;">Inisialisasi...</div>
   </div>
 
-  <div class="table-container">
+  <div class="table-container shadow-sm">
     <div id="hasil"></div>
   </div>
 
-  <div class="fab-wrapper" id="fabMenu">
-    <button class="fab-main" onclick="toggleFab()">☰</button>
-    <button class="fab-sub" onclick="syncData()">🔄</button>
-    <button class="fab-sub" onclick="alert('GPS Aktif')">📍</button>
-    <button class="fab-sub" onclick="alert('Kamera Aktif')">📸</button>
-  </div>
-
   <div id="installArea">
-    <button class="btn btn-dark btn-block shadow-lg" onclick="installPWA()" style="border-radius: 20px; font-weight: bold;">Instal Aplikasi</button>
+    <button class="btn btn-dark btn-block shadow-lg" onclick="installPWA()" style="border-radius: 20px; font-weight: bold;">
+      Instal Aplikasi
+    </button>
   </div>
 
   <script>
-    const GAS_URL = "ISI_DENGAN_URL_GAS_ANDA";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby2PZ6aSXcs2SzT-j_bOlq6li_juGq85b0ytMs53J0OrTzlp6oApy50V9GcpxY14D0/exec";
     const db = new Dexie("DriverLocalDB");
     db.version(1).stores({
       files: "id, content"
     });
-    // Hubungkan ke Worker
-    const worker = new Worker('worker.js');
-    // --- FUNGSI UI & POPUP ---
-    function toggleFab() {
-      document.getElementById('fabMenu').classList.toggle('active');
-    }
-
+    let index = new FlexSearch.Document({
+      document: {
+        id: "id",
+        index: ["search_blob"],
+        store: ["rowArray", "hash"]
+      },
+      tokenize: "forward",
+      cache: true,
+      worker: false
+    });
+    // --- FUNGSI POPUP PROFESIONAL ---
     function showPopup({
       icon,
       title,
@@ -267,14 +246,15 @@
       document.getElementById('popIcon').innerText = icon;
       document.getElementById('popTitle').innerText = title;
       document.getElementById('popText').innerText = text;
-      document.getElementById('popCancel').style.display = showCancel ? 'block' : 'none';
+      const btnCancel = document.getElementById('popCancel');
+      btnCancel.style.display = showCancel ? 'block' : 'none';
       overlay.style.display = 'flex';
       setTimeout(() => overlay.classList.add('active'), 10);
       document.getElementById('popConfirm').onclick = () => {
         closePopup();
         if (onConfirm) onConfirm();
       };
-      document.getElementById('popCancel').onclick = closePopup;
+      btnCancel.onclick = closePopup;
     }
 
     function closePopup() {
@@ -282,109 +262,43 @@
       overlay.classList.remove('active');
       setTimeout(() => overlay.style.display = 'none', 300);
     }
-    // --- PENCARIAN VIA WORKER ---
-    let searchTimer;
-
-    function triggerSearch(v) {
-      if (v.length < 2) {
-        document.getElementById('hasil').innerHTML = "";
-        document.getElementById('search-stats').innerText = "";
-        return;
-      }
-      // Debounce agar tidak terlalu sering kirim pesan ke worker saat mengetik cepat
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        worker.postMessage({
-          type: "SEARCH",
-          payload: v
-        });
-      }, 100);
-    }
-    worker.onmessage = (e) => {
-      const {
-        type,
-        data
-      } = e.data;
-      if (type === "RESULTS") {
-        const rawData = data[0] ? data[0].result.map(r => r.doc.rowArray) : [];
-        rawData.sort((a, b) => parseDate(b[1]) - parseDate(a[1]));
-        renderTable(rawData);
-      }
-    };
-
-    function renderTable(arr) {
-      const container = document.getElementById('hasil');
-      const stats = document.getElementById('search-stats');
-      if (arr.length === 0) {
-        container.innerHTML = "<div class='p-4 text-center'>Data tidak ditemukan</div>";
-        stats.innerText = "TIDAK ADA HASIL";
-        return;
-      }
-      stats.innerText = `DITEMUKAN: ${arr.length} DATA`;
-      const fragment = document.createDocumentFragment();
-      const table = document.createElement('table');
-      table.className = "table table-sm table-striped";
-      table.id = "dtable";
-      table.style.fontSize = "0.8em";
-      table.style.whiteSpace = "nowrap";
-      const headers = ["NO", "TGL", "DRIVERS", "NOPOL", "NOKA", "NOSIN", "TYPE UNIT", "TUJUAN", "UANG JALAN", "VENDOR", "ASAL UNIT", "WARNA", "CODE BOT", "STATUS", "KETERANGAN"];
-      const bg = ["#747D0C", "#27e861", "#D2691E", "#10ebe7", "#FF69B4", "#fa0702", "#eefa02", "#10ebe7", "#00FF7F", "#02b0fa", "#fca4a4", "#FFA500", "#929596", "#79fa02", "#a302fa"];
-      let theadHtml = "<thead><tr>";
-      headers.forEach((h, i) => theadHtml += `<th style="background-color:${bg[i]}">${h}</th>`);
-      theadHtml += "</tr></thead>";
-      table.innerHTML = theadHtml;
-      const tbody = document.createElement('tbody');
-      // Limit 100 untuk anti-lag
-      arr.slice(0, 100).forEach(r => {
-        const tr = document.createElement('tr');
-        tr.className = "font-weight-bold text-center";
-        let rowHtml = "";
-        r.forEach((c, i) => {
-          let v = c || "";
-          if (i === 8 && !isNaN(v) && v !== "") v = "Rp " + Number(v).toLocaleString('id-ID');
-          rowHtml += `<td style="border:1px solid #000">${v}</td>`;
-        });
-        tr.innerHTML = rowHtml;
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      container.innerHTML = "";
-      container.appendChild(table);
-    }
-    // --- LOGIKA DATA & SYNC ---
+    // --- LOGIKA DATA ---
     async function syncData() {
       const statusEl = document.getElementById('status');
       try {
         const local = await db.files.get("main_data");
-        let currentData = local ? local.content : [];
+        let currentData = (local && local.content) ? local.content : [];
+        if (currentData.length > 0) {
+          currentData.forEach(item => index.add(item));
+          document.getElementById('stats-area').innerText = `Data: ${currentData.length}`;
+        }
         const res = await fetch(`${GAS_URL}?action=checkUpdate&t=${Date.now()}`);
         const server = await res.json();
         const localVer = localStorage.getItem('db_ver');
         if (String(server.version) !== String(localVer)) {
           statusEl.innerText = "⏳ Sinkronisasi data...";
-          const dRes = await fetch(`${GAS_URL}?action=getSmartUpdate&t=${Date.now()}`);
+          let hashes = {};
+          currentData.forEach(i => {
+            if (i.id && i.hash) hashes[i.id] = i.hash;
+          });
+          const dRes = await fetch(`${GAS_URL}?action=getSmartUpdate&hashes=${encodeURIComponent(JSON.stringify(hashes))}&t=${Date.now()}`);
           const updates = await dRes.json();
-          const uIds = new Set(updates.map(u => u.id));
-          const finalData = [...updates, ...currentData.filter(d => !uIds.has(d.id))];
-          await db.files.put({
-            id: "main_data",
-            content: finalData
-          });
-          localStorage.setItem('db_ver', server.version);
-          worker.postMessage({
-            type: "CLEAR"
-          });
-          worker.postMessage({
-            type: "ADD",
-            payload: finalData
-          });
-          showPopup({
-            icon: "✅",
-            title: "Update Selesai",
-            text: `${updates.length} data baru disinkronkan.`,
-            showCancel: false,
-            onConfirm: () => location.reload()
-          });
+          if (updates && updates.length > 0) {
+            const uIds = new Set(updates.map(u => u.id));
+            const finalData = [...updates, ...currentData.filter(d => !uIds.has(d.id))];
+            await db.files.put({
+              id: "main_data",
+              content: finalData
+            });
+            localStorage.setItem('db_ver', server.version);
+            showPopup({
+              icon: "✅",
+              title: "Update Selesai",
+              text: `${updates.length} data baru telah disinkronkan. Halaman akan dimuat ulang.`,
+              showCancel: false,
+              onConfirm: () => location.reload()
+            });
+          }
         } else {
           statusEl.innerText = "✅ Data Cloud Sinkron";
         }
@@ -396,35 +310,80 @@
     function askUpdate() {
       showPopup({
         icon: "🚀",
-        title: "Perbarui Data",
-        text: "Seluruh cache akan dibersihkan dan data disusun ulang.",
+        title: "perbahurui Data",
+        text: "Seluruh Data akan dibersihkan dan data akan disusun ulang.. mohon tunggu sampai selesai",
         onConfirm: async () => {
           localStorage.clear();
           await db.files.clear();
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (let r of regs) r.unregister();
+          }
           location.reload(true);
         }
       });
     }
-
+    // --- PEMBANTU SORTING TANGGAL ---
     function parseDate(d) {
       if (!d) return new Date(0);
       const parts = d.split('/');
-      return parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : new Date(0);
+      if (parts.length !== 3) return new Date(0);
+      // Format d/m/y ke Date object (Bulan dikurangi 1 karena index 0-11)
+      return new Date(parts[2], parts[1] - 1, parts[0]);
     }
-    // --- INIT ---
-    window.onload = async () => {
-      const local = await db.files.get("main_data");
-      if (local && local.content) {
-        worker.postMessage({
-          type: "ADD",
-          payload: local.content
-        });
-        document.getElementById('stats-area').innerText = `Data: ${local.content.length}`;
+    // --- PENCARIAN & TABEL ---
+    function cepatCari(v) {
+      const h = document.getElementById('hasil');
+      const s = document.getElementById('search-stats');
+      if (v.length < 2) {
+        h.innerHTML = "";
+        s.innerHTML = "";
+        return;
       }
-      syncData();
-      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-    };
-    // --- INSTALL PWA ---
+      const t0 = performance.now();
+      const res = index.search(v, {
+        limit: 9000,
+        enrich: true
+      });
+      const t1 = performance.now();
+      if (res && res[0]) {
+        const jml = res[0].result.length;
+        const waktu = (t1 - t0).toFixed(2);
+        s.innerHTML = `DITEMUKAN: ${jml} DATA | WAKTU: ${waktu} MS`;
+        let rawData = res[0].result.map(r => r.doc.rowArray);
+        // Sorting: Data terbaru di paling atas (Kolom B / Indeks 1)
+        rawData.sort((a, b) => parseDate(b[1]) - parseDate(a[1]));
+        renderTable(rawData);
+      } else {
+        s.innerHTML = "DATA TIDAK DITEMUKAN";
+        h.innerHTML = "";
+      }
+    }
+
+    function renderTable(arr) {
+      let html = `<table class='table table-sm table-striped' id='dtable' style='font-size:0.8em; white-space: nowrap;'>
+        <thead><tr>
+          <th style='background-color: #747D0C;'>NO</th><th style='background-color: #27e861;'>TGL</th>
+          <th style='background-color: #D2691E;'>DRIVERS</th><th style='background-color: #10ebe7;'>NOPOL</th>
+          <th style='background-color: #FF69B4;'>NOKA</th><th style='background-color: #fa0702;'>NOSIN</th>
+          <th style='background-color: #eefa02; color: #000;'>TYPE UNIT</th><th style='background-color: #10ebe7;'>TUJUAN</th>
+          <th style='background-color: #00FF7F; color: #000;'>UANG JALAN</th><th style='background-color: #02b0fa;'>VENDOR</th>
+          <th style='background-color: #fca4a4;'>ASAL UNIT</th><th style='background-color: #FFA500;'>WARNA</th>
+          <th style='background-color: #929596;'>CODE BOT</th><th style='background-color: #79fa02; color: #000;'>STATUS</th>
+          <th style='background-color: #a302fa;'>KETERANGAN</th>
+        </tr></thead><tbody>`;
+      arr.forEach(r => {
+        html += `<tr class="font-weight-bold text-center">`;
+        r.forEach((c, i) => {
+          let v = c || "";
+          if (i === 8 && !isNaN(v) && v !== "") v = "Rp " + Number(v).toLocaleString('id-ID');
+          html += `<td style="border:1px solid #000">${v}</td>`;
+        });
+        html += "</tr>";
+      });
+      document.getElementById('hasil').innerHTML = html + "</tbody></table>";
+    }
+    // --- INSTALASI ---
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -434,9 +393,18 @@
     async function installPWA() {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
+      const {
+        outcome
+      } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') document.getElementById('installArea').style.display = 'none';
       deferredPrompt = null;
-      document.getElementById('installArea').style.display = 'none';
     }
+    window.onload = () => {
+      syncData();
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js?v=' + Date.now());
+      }
+    };
   </script>
 </body>
 
