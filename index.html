@@ -20,7 +20,6 @@
       margin: 0;
     }
 
-    /* Sticky Header */
     .sticky-header {
       position: sticky;
       top: 0;
@@ -46,25 +45,16 @@
       height: 40px;
       text-align: center;
       font-weight: bold;
-      width: 80%;
+      width: 70%;
       margin: 0 auto;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
-    /* Statistik Pencarian */
-    #search-info {
-      font-size: 11px;
-      margin-top: 5px;
-      color: #6c757d;
-      min-height: 15px;
-    }
-
-    /* Table Style */
     .table-container {
       background: white;
       border-radius: 12px;
       margin-top: 10px;
-      height: calc(100vh - 185px);
+      height: calc(100vh - 180px);
       overflow: auto;
       border: 1px solid #ddd;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -79,6 +69,15 @@
       top: 0;
       padding: 10px;
       z-index: 20;
+    }
+
+    /* Info Pencarian di Tengah Atas */
+    #search-stats {
+      font-size: 11px;
+      color: #555;
+      font-weight: bold;
+      margin-top: 5px;
+      height: 15px;
     }
 
     /* CUSTOM POPUP 3D STYLE */
@@ -200,14 +199,13 @@
     <h6 class="text-primary font-weight-bold mt-1">Atm Powerfull</h6>
     <button class="btn btn-primary btn-update" onclick="askUpdate()">Update</button>
     <div id="stats-area" class="badge badge-primary p-2 mb-1">...</div>
-
     <div class="d-flex justify-content-center">
       <input type="text" id="mencari" class="form-control search-input" placeholder="Cari Data..." oninput="cepatCari(this.value)">
     </div>
 
-    <div id="search-info" class="font-weight-bold text-uppercase"></div>
+    <div id="search-stats"></div>
 
-    <div id="status" class="status-msg text-muted" style="font-size: 10px; margin-top:2px;">Inisialisasi...</div>
+    <div id="status" class="status-msg text-muted" style="font-size: 10px; margin-top:5px;">Inisialisasi...</div>
   </div>
 
   <div class="table-container shadow-sm">
@@ -236,7 +234,7 @@
       cache: true,
       worker: false
     });
-    // --- FUNGSI POPUP ---
+
     function showPopup({
       icon,
       title,
@@ -264,7 +262,6 @@
       overlay.classList.remove('active');
       setTimeout(() => overlay.style.display = 'none', 300);
     }
-    // --- LOGIKA DATA ---
     async function syncData() {
       const statusEl = document.getElementById('status');
       try {
@@ -272,7 +269,7 @@
         let currentData = (local && local.content) ? local.content : [];
         if (currentData.length > 0) {
           currentData.forEach(item => index.add(item));
-          document.getElementById('stats-area').innerText = `Total Database: ${currentData.length}`;
+          document.getElementById('stats-area').innerText = `Data: ${currentData.length}`;
         }
         const res = await fetch(`${GAS_URL}?action=checkUpdate&t=${Date.now()}`);
         const server = await res.json();
@@ -281,7 +278,7 @@
           statusEl.innerText = "⏳ Sinkronisasi data...";
           let hashes = {};
           currentData.forEach(i => {
-            if (i.hash) hashes[i.id] = i.hash;
+            if (i.id && i.hash) hashes[i.id] = i.hash;
           });
           const dRes = await fetch(`${GAS_URL}?action=getSmartUpdate&hashes=${encodeURIComponent(JSON.stringify(hashes))}&t=${Date.now()}`);
           const updates = await dRes.json();
@@ -312,8 +309,8 @@
     function askUpdate() {
       showPopup({
         icon: "🚀",
-        title: "Perbaharui Data",
-        text: "Seluruh Data akan dibersihkan dan disusun ulang. Mohon tunggu sampai selesai.",
+        title: "perbahurui Data",
+        text: "Seluruh Data akan dibersihkan dan data akan disusun ulang.. mohon tunggu sampai selesai",
         onConfirm: async () => {
           localStorage.clear();
           await db.files.clear();
@@ -325,31 +322,29 @@
         }
       });
     }
-    // --- PENCARIAN & TABEL ---
+    // --- PENCARIAN & TABEL (VERSI ASLI RINGAN + STATS) ---
     function cepatCari(v) {
       const h = document.getElementById('hasil');
-      const info = document.getElementById('search-info');
+      const s = document.getElementById('search-stats');
       if (v.length < 2) {
         h.innerHTML = "";
-        info.innerHTML = "";
+        s.innerHTML = "";
         return;
       }
-      // Mulai hitung waktu
-      const t0 = performance.now();
+      const t0 = performance.now(); // Start timer
       const res = index.search(v, {
-        limit: 7000,
+        limit: 500,
         enrich: true
       });
-      // Selesai hitung waktu
-      const t1 = performance.now();
-      const durasi = (t1 - t0).toFixed(2);
+      const t1 = performance.now(); // End timer
       if (res && res[0]) {
         const jml = res[0].result.length;
-        info.innerHTML = `Ditemukan: ${jml} data | Kecepatan: ${durasi} ms`;
+        const waktu = (t1 - t0).toFixed(2);
+        s.innerHTML = `DITEMUKAN: ${jml} DATA | WAKTU: ${waktu} MS`;
         renderTable(res[0].result.map(r => r.doc.rowArray));
       } else {
-        info.innerHTML = `Ditemukan: 0 data | Kecepatan: ${durasi} ms`;
-        h.innerHTML = "<p class='text-center mt-4 text-muted'>Data tidak ditemukan</p>";
+        s.innerHTML = "DATA TIDAK DITEMUKAN";
+        h.innerHTML = "";
       }
     }
 
@@ -376,7 +371,6 @@
       });
       document.getElementById('hasil').innerHTML = html + "</tbody></table>";
     }
-    // --- INSTALASI ---
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
